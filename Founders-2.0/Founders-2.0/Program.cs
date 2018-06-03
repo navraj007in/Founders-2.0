@@ -271,7 +271,7 @@ namespace Founders_2._0
                     break;
             }
         }
-        public async static void run()
+        public static void run()
         {
             bool restart = false;
             while (!restart)
@@ -295,7 +295,7 @@ namespace Founders_2._0
                 switch (commandRecieved)
                 {
                     case 1:
-                        await echoRaida();
+                         echoRaida();
                         break;
                     case 2:
                         //showCoins();
@@ -311,7 +311,7 @@ namespace Founders_2._0
                         //fix(timeout);
                         break;
                     case 6:
-                        //showFolders();
+                        showFolders();
                         break;
                     case 7:
                         //dump();
@@ -335,6 +335,23 @@ namespace Founders_2._0
                 }// end switch
             }// end while
         }// end run method
+
+        public static void showFolders()
+        {
+            Console.Out.WriteLine(" Root:        " + rootFolder);
+            Console.Out.WriteLine(" Import:      " + FS.ImportFolder);
+            Console.Out.WriteLine(" Imported:    " + FS.ImportedFolder);
+            Console.Out.WriteLine(" Suspect:     " + FS.SuspectFolder);
+            Console.Out.WriteLine(" Trash:       " + FS.TrashFolder);
+            Console.Out.WriteLine(" Bank:        " + FS.BankFolder);
+            Console.Out.WriteLine(" Fracked:     " + FS.FrackedFolder);
+            Console.Out.WriteLine(" Templates:   " + FS.TemplateFolder);
+            //Console.Out.WriteLine(" Directory:   " + FS.di);
+            Console.Out.WriteLine(" Counterfeits:" + FS.CounterfeitFolder);
+            Console.Out.WriteLine(" Export:      " + FS.ExportFolder);
+            Console.Out.WriteLine(" Lost:        " + FS.LostFolder);
+        } // end show folders
+
         public static void Setup()
         {
             // Create the Folder Structure
