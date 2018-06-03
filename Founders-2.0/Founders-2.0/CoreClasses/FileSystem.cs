@@ -147,7 +147,7 @@ namespace CloudCoinClient.CoreClasses
                 serializer.Converters.Add(new JavaScriptDateTimeConverter());
                 serializer.NullValueHandling = NullValueHandling.Ignore;
                 Stack stack = new Stack(coin);
-                using (StreamWriter sw = new StreamWriter(PreDetectFolder + fileName + ".celebrium"))
+                using (StreamWriter sw = new StreamWriter(PreDetectFolder + fileName + ".stack"))
                 using (JsonWriter writer = new JsonTextWriter(sw))
                 {
                     serializer.Serialize(writer, stack);
@@ -221,7 +221,7 @@ namespace CloudCoinClient.CoreClasses
         }
         public string getCelebriumName(string CoinName)
         {
-            return CoinName.Replace("CloudCoin", "Celebrium");
+            return CoinName;
         }
         public void TransferCoins(IEnumerable<CloudCoin> coins, string sourceFolder, string targetFolder,string extension = ".stack")
         {
