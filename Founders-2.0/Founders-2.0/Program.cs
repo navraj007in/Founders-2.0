@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 using System.Linq;
 using Founders;
+using Microsoft.Extensions.CommandLineUtils;
+using System.Collections.Generic;
+
 namespace Founders_2._0
 {
     class Program
@@ -17,9 +20,100 @@ namespace Founders_2._0
         public static String prompt = "> ";
         public static String[] commandsAvailable = new String[] { "Echo raida", "Show CloudCoins in Bank", "Import / Pown & Deposit", "Export / Withdraw", "Fix Fracked", "Show Folders", "Export stack files with one note each", "Help", "Quit" };
 
-        static void Main(string[] args)
+
+        public static void Main(params string[] args)
         {
-            Console.Out.WriteLine("Loading File system...");
+            Setup();
+            // Program.exe <-g|--greeting|-$ <greeting>> [name <fullname>]
+            // [-?|-h|--help] [-u|--uppercase]
+            CommandLineApplication commandLineApplication =
+              new CommandLineApplication(throwOnUnexpectedArg: false);
+            CommandArgument names = null;
+            commandLineApplication.Command("name",
+              (target) =>
+                names = target.Argument(
+                  "fullname",
+                  "Enter the full name of the person to be greeted.",
+                  multipleValues: true));
+            CommandOption greeting = commandLineApplication.Option(
+              "-$|-g |--greeting <greeting>",
+              "The greeting to display. The greeting supports"
+              + " a format string where {fullname} will be "
+              + "substituted with the full name.",
+              CommandOptionType.SingleValue);
+            CommandOption uppercase = commandLineApplication.Option(
+              "-u | --uppercase", "Display the greeting in uppercase.",
+              CommandOptionType.NoValue);
+            commandLineApplication.HelpOption("-? | -h | --help");
+
+            CommandOption echo = commandLineApplication.Option(
+              "-$|-e |--echo ",
+              "The greeting to display. The greeting supports"
+              + " a format string where {fullname} will be "
+              + "substituted with the full name.",
+                CommandOptionType.NoValue);
+
+            CommandOption folders = commandLineApplication.Option(
+              "-$|-f |--folders ",
+              "The command to display CloudCoin Working Folder Structure",
+                CommandOptionType.NoValue);
+
+            CommandOption pown = commandLineApplication.Option(
+              "-$|-p |--pown ",
+              "The command to pown/detect/import your CloudCoins.",
+                CommandOptionType.NoValue);
+
+            CommandOption detection = commandLineApplication.Option(
+              "-$|-d |--detect ",
+              "The command to pown/detect/import your CloudCoins.",
+                CommandOptionType.NoValue);
+
+            CommandOption import = commandLineApplication.Option(
+              "-$|-i |--import ",
+              "The command to pown/detect/import your CloudCoins.",
+                CommandOptionType.NoValue);
+            
+            commandLineApplication.OnExecute(async () =>
+            {
+                if (echo.HasValue())
+                {
+                    //ech();
+                    await echoRaida();
+                }
+                if(folders.HasValue())
+                {
+                    showFolders();
+                }
+
+                if (pown.HasValue() || detection.HasValue() || import.HasValue())
+                {
+                    await detect();
+                }
+
+                return 0;
+            });
+            commandLineApplication.Execute(args);
+        }
+
+        private static void ech(){
+            Console.WriteLine("Echo...");
+        }
+        private static void Greet(
+          string greeting, IEnumerable<string> values, bool useUppercase)
+        {
+            Console.WriteLine(greeting);
+        }
+
+      /*  static void Main(string[] args)
+        {
+           
+
+            var app = new CommandLineApplication();
+            app.Name = "ninja";
+            app.HelpOption("-?|-h|--help");
+
+
+            /* Console.Out.WriteLine("Loading File system...");
             Setup();
             Console.Out.WriteLine("File system loading Completed.");
             int argLength = args.Length;
@@ -32,8 +126,9 @@ namespace Founders_2._0
                 printWelcome();
                 run();
             }
-        }
 
+        }
+    */
         public static void printWelcome()
         {
             Console.BackgroundColor = ConsoleColor.Blue;
@@ -78,9 +173,10 @@ namespace Founders_2._0
 
         public async static Task echoRaida()
         {
-            var echos = raida.GetEchoTasks();
             Console.Out.WriteLine("Starting Echo to RAIDA\n");
             Console.Out.WriteLine("----------------------------------\n");
+            var echos = raida.GetEchoTasks();
+           
 
             await Task.WhenAll(echos.AsParallel().Select(async task => await task()));
             //MessageBox.Show("Finished Echo");
@@ -360,14 +456,10 @@ namespace Founders_2._0
             raida = RAIDA.GetInstance();
             //raida.Echo();
             FS.LoadFileSystem();
-            var coins = FS.LoadFolderCoins(FS.CounterfeitFolder);
-            foreach (var coin in coins)
-            {
-                Console.WriteLine("Found Coin - " + coin.sn + " with denomination - " + coin.denomination);
-            }
+
             //Load Local Coins
 
-            Console.Read();
+          //  Console.Read();
         }
 
     }
