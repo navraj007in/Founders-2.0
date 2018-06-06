@@ -20,12 +20,29 @@ namespace Founders_2._0
         public static String prompt = "> ";
         public static String[] commandsAvailable = new String[] { "Echo raida", "Show CloudCoins in Bank", "Import / Pown & Deposit", "Export / Withdraw", "Fix Fracked", "Show Folders", "Export stack files with one note each", "Help", "Quit" };
 
+        static public int DisplayMenu()
+        {
+            Console.WriteLine("Founders Actions");
+            Console.WriteLine();
+            Console.WriteLine("1. Echo RAIDA");
+            Console.WriteLine("2. Show CloudCoins");
+            Console.WriteLine("3. Import CloudCoins");
+            Console.WriteLine("4. Export CloudCoins");
+            Console.WriteLine("5. Fix Fracked Coins");
+            Console.WriteLine("6. Show Folders");
+            Console.WriteLine("7. Help");
+
+            Console.WriteLine("8. Exit");
+            var result = Console.ReadLine();
+            return Convert.ToInt32(result);
+        }
 
         public static void Main(params string[] args)
         {
             Setup();
             // Program.exe <-g|--greeting|-$ <greeting>> [name <fullname>]
             // [-?|-h|--help] [-u|--uppercase]
+            #region CommandLineArguments
             CommandLineApplication commandLineApplication =
               new CommandLineApplication(throwOnUnexpectedArg: false);
             CommandArgument names = null;
@@ -40,7 +57,7 @@ namespace Founders_2._0
               "The greeting to display. The greeting supports"
               + " a format string where {fullname} will be "
               + "substituted with the full name.",
-              CommandOptionType.SingleValue);
+              CommandOptionType.NoValue);
             CommandOption uppercase = commandLineApplication.Option(
               "-u | --uppercase", "Display the greeting in uppercase.",
               CommandOptionType.NoValue);
@@ -72,7 +89,23 @@ namespace Founders_2._0
               "-$|-i |--import ",
               "The command to pown/detect/import your CloudCoins.",
                 CommandOptionType.NoValue);
-            
+
+            #endregion
+
+            if (args.Length <= 1)
+            {
+                printWelcome();
+                while (true)
+                {
+                    int input = DisplayMenu();
+                    ProcessInput(input).Wait();
+                    if (input == 8)
+                        break;
+                }
+            }
+            else
+            {
+
             commandLineApplication.OnExecute(async () =>
             {
                 if (echo.HasValue())
@@ -89,12 +122,54 @@ namespace Founders_2._0
                 {
                     await detect();
                 }
-
+                if (greeting.HasValue())
+                {
+                    printWelcome();
+                }
                 return 0;
             });
             commandLineApplication.Execute(args);
+            }
+
         }
 
+        private static void showCoins()
+        {
+
+        }
+        private async static Task ProcessInput(int input)
+        {
+            switch (input)
+            {
+                case 1:
+                    await echoRaida();
+                    break;
+                case 2:
+                    showCoins();
+                    break;
+                case 3:
+                    await detect();
+                    break;
+                case 4:
+                    //export();
+                    break;
+                case 5:
+                    Process.Start(FS.RootPath);
+                    //showFolders();
+                    break;
+                case 6:
+                    //fix(timeout);
+                    break;
+                case 7:
+                    //dump();
+                    break;
+                case 8:
+                    help();
+                    break;
+                default:
+                    break;
+            }
+        }
         private static void ech(){
             Console.WriteLine("Echo...");
         }
@@ -131,6 +206,7 @@ namespace Founders_2._0
     */
         public static void printWelcome()
         {
+            Console.WriteLine("");
             Console.BackgroundColor = ConsoleColor.Blue;
             Console.ForegroundColor = ConsoleColor.White;
             Console.Out.WriteLine("                                                                  ");
@@ -143,8 +219,8 @@ namespace Founders_2._0
             Console.Out.WriteLine("                                                                  ");
             Console.ForegroundColor = ConsoleColor.White;
             Console.BackgroundColor = ConsoleColor.Black;
-            Console.Out.Write("  Checking RAIDA");
-            echoRaida();
+            //Console.Out.Write("  Checking RAIDA");
+            //await echoRaida();
             //RAIDA_Status.showMs();
             //Check to see if suspect files need to be imported because they failed to finish last time. 
             //String[] suspectFileNames = new DirectoryInfo(suspectFolder).GetFiles().Select(o => o.Name).ToArray();//Get all files in suspect folder
@@ -208,8 +284,8 @@ namespace Founders_2._0
             FileSystem.predetectCoins = predetectCoins;
 
             // Process Coins in Lots of 200. Can be changed from Config File
-            int LotCount = predetectCoins.Count() / CloudCoinCore.Config.MultiDetectLoad;
-            if (predetectCoins.Count() % CloudCoinCore.Config.MultiDetectLoad > 0) LotCount++;
+            int LotCount = predetectCoins.Count() / Config.MultiDetectLoad;
+            if (predetectCoins.Count() % Config.MultiDetectLoad > 0) LotCount++;
             ProgressChangedEventArgs pge = new ProgressChangedEventArgs();
 
             int CoinCount = 0;
@@ -217,10 +293,10 @@ namespace Founders_2._0
             for (int i = 0; i < LotCount; i++)
             {
                 //Pick up 200 Coins and send them to RAIDA
-                var coins = predetectCoins.Skip(i * CloudCoinCore.Config.MultiDetectLoad).Take(200);
+                var coins = predetectCoins.Skip(i * Config.MultiDetectLoad).Take(200);
                 raida.coins = coins;
 
-                var tasks = raida.GetMultiDetectTasks(coins.ToArray(), CloudCoinCore.Config.milliSecondsToTimeOut);
+                var tasks = raida.GetMultiDetectTasks(coins.ToArray(), Config.milliSecondsToTimeOut);
                 try
                 {
                     string requestFileName = Utils.RandomString(16).ToLower() + DateTime.Now.ToString("yyyyMMddHHmmss") + ".stack";
@@ -318,12 +394,8 @@ namespace Founders_2._0
             Debug.WriteLine("Detection Completed in - " + ts.TotalMilliseconds / 1000);
             updateLog("Detection Completed in - " + ts.TotalMilliseconds / 1000);
 
-
-            //App.Current.Dispatcher.Invoke(delegate
-            //{
-            //    enableUI();
-            //    ShowCoins();
-            //});
+            Console.Read();
+           
 
         }
 
