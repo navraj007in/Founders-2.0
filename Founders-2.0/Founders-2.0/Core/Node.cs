@@ -39,6 +39,7 @@ namespace CloudCoinCore
         public MultiDetectResponse MultiResponse = new MultiDetectResponse();
         public String Ticket = "";
         RAIDANode node;
+
         //Constructor
         public Node(int NodeNumber)
         {
@@ -477,7 +478,7 @@ namespace CloudCoinCore
             try
             {
 
-                var raida = RAIDA.GetInstance();
+                var raida = Founders_2._0.Program.raida;
                 int[] nn = raida.multiRequest.nn;
                 int[] sn = raida.multiRequest.sn;
                 String[] an = raida.multiRequest.an[NodeNumber - 1];

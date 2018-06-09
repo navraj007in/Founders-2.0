@@ -1,8 +1,9 @@
 ﻿using System;
 using System.IO;
+using System.Reflection;
 using System.Text;
 
-namespace Celebrium
+namespace Founders_2
 {
     public class SimpleLogger
     {
@@ -20,7 +21,7 @@ namespace Celebrium
         {
             DatetimeFormat = "yyyy-MM-dd HH:mm:ss.fff";
             Filename = "cloudcoince" + ".log";
-
+            Filename = Assembly.GetExecutingAssembly().GetName().Name + ".log";
             // Log file header line
             string logHeader = Filename + " is created.";
             if (!File.Exists(Filename))

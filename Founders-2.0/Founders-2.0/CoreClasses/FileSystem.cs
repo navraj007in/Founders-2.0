@@ -197,6 +197,48 @@ namespace CloudCoinClient.CoreClasses
             }
         }
 
+        public void WriteCoin(IEnumerable<CloudCoin> coins, string folder, bool writeAll = false)
+        {
+            if (writeAll)
+            {
+                string fileName = Utils.RandomString(16) + ".stack";
+                JsonSerializer serializer = new JsonSerializer();
+                serializer.Converters.Add(new JavaScriptDateTimeConverter());
+                serializer.NullValueHandling = NullValueHandling.Ignore;
+                Stack stack = new Stack(coins.ToArray());
+                using (StreamWriter sw = new StreamWriter(folder + fileName + ".stack"))
+                using (JsonWriter writer = new JsonTextWriter(sw))
+                {
+                    serializer.Serialize(writer, stack);
+                }
+                return;
+            }
+            var folderCoins = LoadFolderCoins(folder);
+
+            foreach (var coin in coins)
+            {
+                string fileName = coin.FileName;
+                int coinExists = (from x in folderCoins
+                                  where x.sn == coin.sn
+                                  select x).Count();
+                if (coinExists > 0)
+                {
+                    string suffix = Utils.RandomString(16);
+                    fileName += suffix.ToLower();
+                }
+                JsonSerializer serializer = new JsonSerializer();
+                serializer.Converters.Add(new JavaScriptDateTimeConverter());
+                serializer.NullValueHandling = NullValueHandling.Ignore;
+                Stack stack = new Stack(coin);
+                using (StreamWriter sw = new StreamWriter(folder + fileName + ".stack"))
+                using (JsonWriter writer = new JsonTextWriter(sw))
+                {
+                    serializer.Serialize(writer, stack);
+                }
+
+            }
+        }
+
         public void WriteCoin(CloudCoin coin, string folder,string extension)
         {
             var folderCoins = LoadFolderCoins(folder);

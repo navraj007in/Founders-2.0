@@ -13,6 +13,7 @@ using System.Net;
 using Newtonsoft.Json;
 using Microsoft.Extensions;
 using Microsoft.Extensions.Configuration;
+using Celebrium;
 
 namespace Founders_2._0
 {
@@ -22,12 +23,13 @@ namespace Founders_2._0
         public static KeyboardReader reader = new KeyboardReader();
         public static String rootFolder = Directory.GetCurrentDirectory();
         static FileSystem FS = new FileSystem(rootFolder);
-        static RAIDA raida;
+        public static RAIDA raida;
         static List<RAIDA> networks = new List<RAIDA>();
         public static String prompt = "> ";
         public static Frack_Fixer fixer;
         public static String[] commandsAvailable = new String[] { "Echo raida", "Show CloudCoins in Bank", "Import / Pown & Deposit", "Export / Withdraw", "Fix Fracked", "Show Folders", "Export stack files with one note each", "Help", "Quit" };
         public static int NetworkNumber = 1;
+        public static SimpleLogger logger = new SimpleLogger(FS.LogsFolder + "logs" + DateTime.Now.ToString("yyyyMMdd").ToLower() + ".log", true);
 
         #region Total Variables
         public static int onesCount = 0;
@@ -127,6 +129,7 @@ namespace Founders_2._0
                 raida = (from x in networks
                          where x.NetworkNumber == NetworkNumber
                          select x).FirstOrDefault();
+                RAIDA.ActiveRAIDA = raida;
                 if(raida == null)
                 {
                     updateLog("Selected Network Number not found. Quitting.");
@@ -373,7 +376,7 @@ namespace Founders_2._0
                     await detect();
                     break;
                 case 4:
-                    //export();
+                    export();
                     break;
                 case 6:
                     try
@@ -621,7 +624,7 @@ namespace Founders_2._0
                     int j = 0;
                     foreach (var coin in coins)
                     {
-                        //coin.pown = "";
+                        coin.pown = "";
                         for (int k = 0; k < CloudCoinCore.Config.NodeCount; k++)
                         {
                             coin.response[k] = raida.nodes[k].MultiResponse.responses[j];
@@ -645,6 +648,8 @@ namespace Founders_2._0
                     pge.MinorProgress = (CoinCount - 1) * 100 / totalCoinCount;
                     Debug.WriteLine("Minor Progress- " + pge.MinorProgress);
                     raida.OnProgressChanged(pge);
+                    FS.WriteCoin(coins, FS.DetectedFolder);
+                    FS.RemoveCoins(coins, FS.PreDetectFolder);
 
 
                     //FS.WriteCoin(coins, FS.DetectedFolder);
@@ -661,6 +666,7 @@ namespace Founders_2._0
             Debug.WriteLine("Minor Progress- " + pge.MinorProgress);
             raida.OnProgressChanged(pge);
             var detectedCoins = FS.LoadFolderCoins(FS.DetectedFolder);
+        //    detectedCoins.ForEach(x => x.pown="pppppppppppppppppppppppp");
 
             // Apply Sort to Folder to all detected coins at once.
             updateLog("Starting Sort.....");
@@ -709,15 +715,102 @@ namespace Founders_2._0
             Debug.WriteLine("Detection Completed in - " + ts.TotalMilliseconds / 1000);
             updateLog("Detection Completed in - " + ts.TotalMilliseconds / 1000);
 
-            Console.Read();
+            //Console.Read();
            
 
         }
 
         public static void updateLog(string logLine)
         {
+            logger.Info(logLine);
             Console.Out.WriteLine(logLine);
         }
+
+        public static void export()
+        {
+            Console.Out.WriteLine("");
+            Banker bank = new Banker(FS);
+            int[] bankTotals = bank.countCoins(FS.BankFolder);
+            int[] frackedTotals = bank.countCoins(FS.FrackedFolder);
+            Console.Out.WriteLine("  Your Bank Inventory:");
+            int grandTotal = (bankTotals[0] + frackedTotals[0]);
+            showCoins();
+            // state how many 1, 5, 25, 100 and 250
+            int exp_1 = 0;
+            int exp_5 = 0;
+            int exp_25 = 0;
+            int exp_100 = 0;
+            int exp_250 = 0;
+            //Warn if too many coins
+            Console.WriteLine(bankTotals[1] + frackedTotals[1] + bankTotals[2] + frackedTotals[2] + bankTotals[3] + frackedTotals[3] + bankTotals[4] + frackedTotals[4] + bankTotals[5] + frackedTotals[5]);
+            if (((bankTotals[1] + frackedTotals[1]) + (bankTotals[2] + frackedTotals[2]) + (bankTotals[3] + frackedTotals[3]) + (bankTotals[4] + frackedTotals[4]) + (bankTotals[5] + frackedTotals[5])) > 1000)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.Out.WriteLine("Warning: You have more than 1000 Notes in your bank. Stack files should not have more than 1000 Notes in them.");
+                Console.Out.WriteLine("Do not export stack files with more than 1000 notes. .");
+                Console.ForegroundColor = ConsoleColor.White;
+            }//end if they have more than 1000 coins
+
+            Console.Out.WriteLine("  Do you want to export your CloudCoin to (1)jpgs or (2) stack (JSON) file?");
+            int file_type = reader.readInt(1, 2);
+            // 1 jpg 2 stack
+            if (onesTotalCount > 0)
+            {
+                Console.Out.WriteLine("  How many 1s do you want to export?");
+                exp_1 = reader.readInt(0, (onesTotalCount));
+            }
+
+            // if 1s not zero 
+            if (fivesTotalCount > 0)
+            {
+                Console.Out.WriteLine("  How many 5s do you want to export?");
+                exp_5 = reader.readInt(0, (fivesTotalCount));
+            }
+
+            // if 1s not zero 
+            if ((qtrTotalCount > 0))
+            {
+                Console.Out.WriteLine("  How many 25s do you want to export?");
+                exp_25 = reader.readInt(0, (qtrTotalCount));
+            }
+
+            // if 1s not zero 
+            if (hundredsTotalCount > 0)
+            {
+                Console.Out.WriteLine("  How many 100s do you want to export?");
+                exp_100 = reader.readInt(0, (hundredsTotalCount));
+            }
+
+            // if 1s not zero 
+            if (twoFiftiesTotalCount > 0)
+            {
+                Console.Out.WriteLine("  How many 250s do you want to export?");
+                exp_250 = reader.readInt(0, (twoFiftiesTotalCount));
+            }
+
+            // if 1s not zero 
+            // move to export
+            Exporter exporter = new Exporter(FS);
+            if (file_type == 1)
+            {
+                Console.Out.WriteLine("  Tag your jpegs with 'random' to give them a random number.");
+            }
+            Console.Out.WriteLine("  What tag will you add to the file name?");
+            String tag = reader.readString();
+            //Console.Out.WriteLine(("Exporting to:" + exportFolder));
+            if (file_type == 1)
+            {
+                exporter.writeJPEGFiles(exp_1, exp_5, exp_25, exp_100, exp_250, tag);
+                // stringToFile( json, "test.txt");
+            }
+            else
+            {
+                exporter.writeJSONFile(exp_1, exp_5, exp_25, exp_100, exp_250, tag);
+            }
+
+            // end if type jpge or stack
+            Console.Out.WriteLine("  Exporting CloudCoins Completed.");
+        }// end export One
         /* STATIC METHODS */
         public async static void handleCommand(string[] args)
         {

@@ -24,6 +24,7 @@ namespace CloudCoinCore
         public MultiDetectRequest multiRequest;
         public Network network;
         public int NetworkNumber=1;
+        public static RAIDA ActiveRAIDA;
         // Singleton Pattern implemented using private constructor 
         // This allows only one instance of RAIDA per application
 

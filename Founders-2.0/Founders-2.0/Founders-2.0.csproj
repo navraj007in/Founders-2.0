@@ -6,8 +6,38 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Templates\jpeg1.jpg" />
+    <None Remove="Templates\jpeg100.jpg" />
+    <None Remove="Templates\jpeg25.jpg" />
+    <None Remove="Templates\jpeg250.jpg" />
+    <None Remove="Templates\jpeg5.jpg" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Templates\jpeg25.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Templates\jpeg1.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Templates\jpeg100.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Templates\jpeg250.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Templates\jpeg5.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="DLLs\" />
     <Folder Include="Import\" />
+    <Folder Include="NewFolder\" />
   </ItemGroup>
 
   <ItemGroup>
