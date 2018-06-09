@@ -25,8 +25,31 @@ namespace Founders_2._0
         static RAIDA raida;
         static List<RAIDA> networks = new List<RAIDA>();
         public static String prompt = "> ";
+        public static Frack_Fixer fixer;
         public static String[] commandsAvailable = new String[] { "Echo raida", "Show CloudCoins in Bank", "Import / Pown & Deposit", "Export / Withdraw", "Fix Fracked", "Show Folders", "Export stack files with one note each", "Help", "Quit" };
         public static int NetworkNumber = 1;
+
+        #region Total Variables
+        public static int onesCount = 0;
+        public static int fivesCount = 0;
+        public static int qtrCount = 0;
+        public static int hundredsCount = 0;
+        public static int twoFiftiesCount = 0;
+
+        public static int onesFrackedCount = 0;
+        public static int fivesFrackedCount = 0;
+        public static int qtrFrackedCount = 0;
+        public static int hundredsFrackedCount = 0;
+        public static int twoFrackedFiftiesCount = 0;
+
+        public static int onesTotalCount = 0;
+        public static int fivesTotalCount = 0;
+        public static int qtrTotalCount = 0;
+        public static int hundredsTotalCount = 0;
+        public static int twoFiftiesTotalCount = 0;
+        #endregion
+
+
         static public int DisplayMenu()
         {
             Console.WriteLine("Founders Actions");
@@ -66,8 +89,7 @@ namespace Founders_2._0
                 NetworkNumber = 1;
                 updateLog("Reading Network Number Config failed. Setting default to 1.");
             }
-            Configuration["NetworkNumber"] = "2";
-
+            
             //services.Configure<AppSettings>(appSettings);
         }
 
@@ -143,6 +165,9 @@ namespace Founders_2._0
             initConfig();
             updateLog("Loading Network Directory");
             SetupRAIDA();
+            FS.LoadFileSystem();
+            fixer = new Frack_Fixer(FS, Config.milliSecondsToTimeOut);
+
             Console.Clear();
             // Program.exe <-g|--greeting|-$ <greeting>> [name <fullname>]
             // [-?|-h|--help] [-u|--uppercase]
@@ -174,6 +199,17 @@ namespace Founders_2._0
               + "substituted with the full name.",
                 CommandOptionType.NoValue);
 
+            CommandOption total = commandLineApplication.Option(
+            "-$|-b |--bank ",
+            "Shows details of your coins in bank.",
+            CommandOptionType.NoValue);
+
+            CommandOption backup = commandLineApplication.Option(
+            "-$|-ba |--backup ",
+            "Backup your coins to specified folder.",
+            CommandOptionType.SingleValue);
+
+
             CommandOption folders = commandLineApplication.Option(
               "-$|-f |--folders ",
               "The command to display CloudCoin Working Folder Structure",
@@ -196,15 +232,22 @@ namespace Founders_2._0
 
             #endregion
 
-            if (args.Length <= 1)
+            if (args.Length <1)
             {
                 printWelcome();
                 while (true)
                 {
-                    int input = DisplayMenu();
-                    ProcessInput(input).Wait();
-                    if (input == 9)
+                    try
+                    {
+                        int input = DisplayMenu();
+                        ProcessInput(input).Wait();
+                        if (input == 9)
+                            break;
+                    }
+                    catch(Exception e)
+                    {
                         break;
+                    }
                 }
             }
             else
@@ -230,6 +273,14 @@ namespace Founders_2._0
                 {
                     printWelcome();
                 }
+                if(total.HasValue())
+                {
+                    showCoins();
+                }
+                if (backup.HasValue())
+                {
+                    Console.WriteLine(backup.Value());
+                }
                 return 0;
             });
             commandLineApplication.Execute(args);
@@ -239,7 +290,74 @@ namespace Founders_2._0
 
         private static void showCoins()
         {
+            Console.Out.WriteLine("");
+            // This is for consol apps.
+            Banker bank = new Banker(FS);
+            int[] bankTotals = bank.countCoins(FS.BankFolder);
+            int[] frackedTotals = bank.countCoins(FS.FrackedFolder);
+            // int[] counterfeitTotals = bank.countCoins( counterfeitFolder );
 
+            var bankCoins = FS.LoadFolderCoins(FS.BankFolder);
+
+            
+            onesCount = (from x in bankCoins
+                         where x.denomination == 1
+                         select x).Count();
+            fivesCount = (from x in bankCoins
+                          where x.denomination == 5
+                          select x).Count();
+            qtrCount = (from x in bankCoins
+                        where x.denomination == 25
+                        select x).Count();
+            hundredsCount = (from x in bankCoins
+                             where x.denomination == 100
+                             select x).Count();
+            twoFiftiesCount = (from x in bankCoins
+                               where x.denomination == 250
+                               select x).Count();
+
+            var frackedCoins = FS.LoadFolderCoins(FS.FrackedFolder);
+            bankCoins.AddRange(frackedCoins);
+
+            onesFrackedCount = (from x in frackedCoins
+                         where x.denomination == 1
+                         select x).Count();
+            fivesFrackedCount = (from x in frackedCoins
+                          where x.denomination == 5
+                          select x).Count();
+            qtrFrackedCount = (from x in frackedCoins
+                        where x.denomination == 25
+                        select x).Count();
+            hundredsFrackedCount = (from x in frackedCoins
+                             where x.denomination == 100
+                             select x).Count();
+            twoFrackedFiftiesCount = (from x in frackedCoins
+                               where x.denomination == 250
+                               select x).Count();
+
+            onesTotalCount = onesCount + onesFrackedCount;
+            fivesTotalCount = fivesCount + fivesFrackedCount;
+            qtrTotalCount = qtrCount + qtrFrackedCount;
+            hundredsTotalCount = hundredsCount + hundredsFrackedCount;
+            twoFiftiesTotalCount = twoFiftiesCount + twoFrackedFiftiesCount;
+
+
+            int totalAmount = onesTotalCount + (fivesTotalCount * 5) + (qtrTotalCount * 25) + (hundredsTotalCount * 100) + (twoFiftiesTotalCount * 250);
+
+            //Output  " 12.3"
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.BackgroundColor = ConsoleColor.Blue;
+            Console.Out.WriteLine("                                                                    ");
+            Console.Out.WriteLine("    Total Coins in Bank:    " + string.Format("{0,8:N0}", totalAmount) + "                                ");
+            Console.Out.WriteLine("                                                                    ");
+            Console.Out.WriteLine("                 1s         5s         25s       100s       250s    ");
+            Console.Out.WriteLine("                                                                    ");
+            Console.Out.WriteLine("   Perfect:   " + string.Format("{0,7}", onesCount) + "    " + string.Format("{0,7}", fivesCount) + "    " + string.Format("{0,7}", qtrCount) + "    " + string.Format("{0,7}", hundredsCount) + "    " + string.Format("{0,7}", twoFiftiesCount) + "   ");
+            Console.Out.WriteLine("                                                                    ");
+            Console.Out.WriteLine("   Fracked:   " + string.Format("{0,7}", onesFrackedCount) + "    " + string.Format("{0,7}", fivesFrackedCount) + "    " + string.Format("{0,7}", qtrFrackedCount) + "    " + string.Format("{0,7}", hundredsFrackedCount) + "    " + string.Format("{0,7}", twoFrackedFiftiesCount) + "   ");
+            Console.Out.WriteLine("                                                                    ");
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.BackgroundColor = ConsoleColor.Black;
         }
         private async static Task ProcessInput(int input)
         {
@@ -257,15 +375,23 @@ namespace Founders_2._0
                 case 4:
                     //export();
                     break;
-                case 5:
-                    Process.Start(FS.RootPath);
-                    //showFolders();
-                    break;
                 case 6:
+                    try
+                    {
+                        Process.Start(FS.RootPath);
+                    }
+                    catch(Exception e)
+                    {
+                        updateLog(e.Message);
+                    }
+                    showFolders();
+                    break;
+                case 5:
+                    Fix();
                     //fix(timeout);
                     break;
                 case 7:
-                    //dump();
+                    help();
                     break;
                 case 8:
                     Console.Write("Enter New Network Number - ");
@@ -603,7 +729,7 @@ namespace Founders_2._0
                     await echoRaida();
                     break;
                 case "showcoins":
-                    //showCoins();
+                    showCoins();
                     break;
                 case "import":
                     //import();
@@ -692,6 +818,14 @@ namespace Founders_2._0
                 }// end switch
             }// end while
         }// end run method
+
+        private static void Fix()
+        {
+            fixer.continueExecution = true;
+            fixer.IsFixing = true;
+            fixer.FixAll();
+            fixer.IsFixing = false;
+        }
 
         public static void showFolders()
         {
