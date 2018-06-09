@@ -129,6 +129,7 @@ namespace Founders_2._0
                 raida = (from x in networks
                          where x.NetworkNumber == NetworkNumber
                          select x).FirstOrDefault();
+                raida.FS = FS;
                 RAIDA.ActiveRAIDA = raida;
                 if(raida == null)
                 {
@@ -666,7 +667,7 @@ namespace Founders_2._0
             Debug.WriteLine("Minor Progress- " + pge.MinorProgress);
             raida.OnProgressChanged(pge);
             var detectedCoins = FS.LoadFolderCoins(FS.DetectedFolder);
-        //    detectedCoins.ForEach(x => x.pown="pppppppppppppppppppppppp");
+            //detectedCoins.ForEach(x => x.pown= "ppppppppppppppppppppppppp");
 
             // Apply Sort to Folder to all detected coins at once.
             updateLog("Starting Sort.....");

@@ -156,11 +156,11 @@ namespace CloudCoinCore
             if ((charCount(pown, 'p') < 6 && (charCount(pown, 'f') > 13)))
             {
                 returnTruth = true;
-                Console.Out.WriteLine("isCounterfeit");
+             //   Console.Out.WriteLine("isCounterfeit");
             }
             else
             {
-                Console.Out.WriteLine("Not isCounterfeit");
+               // Console.Out.WriteLine("Not isCounterfeit");
             }
             return returnTruth;
         }//end is counterfeit
