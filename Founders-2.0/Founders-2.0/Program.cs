@@ -8,18 +8,25 @@ using System.Linq;
 using Founders;
 using Microsoft.Extensions.CommandLineUtils;
 using System.Collections.Generic;
+using CloudCoinCoreDirectory;
+using System.Net;
+using Newtonsoft.Json;
+using Microsoft.Extensions;
+using Microsoft.Extensions.Configuration;
 
 namespace Founders_2._0
 {
     class Program
     {
+        public static IConfiguration Configuration { get; set; }
         public static KeyboardReader reader = new KeyboardReader();
         public static String rootFolder = Directory.GetCurrentDirectory();
         static FileSystem FS = new FileSystem(rootFolder);
         static RAIDA raida;
+        static List<RAIDA> networks = new List<RAIDA>();
         public static String prompt = "> ";
         public static String[] commandsAvailable = new String[] { "Echo raida", "Show CloudCoins in Bank", "Import / Pown & Deposit", "Export / Withdraw", "Fix Fracked", "Show Folders", "Export stack files with one note each", "Help", "Quit" };
-
+        public static int NetworkNumber = 1;
         static public int DisplayMenu()
         {
             Console.WriteLine("Founders Actions");
@@ -36,10 +43,86 @@ namespace Founders_2._0
             var result = Console.ReadLine();
             return Convert.ToInt32(result);
         }
+        public class AppSettings
+        {
+            public string Hello { get; set; }
+        }
+        public static void initConfig()
+        {
+            var builder = new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json");
 
+            Configuration = builder.Build();
+            string nn = Configuration["NetworkNumber"];
+
+            try
+            {
+                NetworkNumber = Convert.ToInt16(nn);
+            }
+            catch(Exception e)
+            {
+                NetworkNumber = 1;
+                updateLog("Reading Network Number Config failed. Setting default to 1.");
+            }
+            Configuration["NetworkNumber"] = "2";
+
+            //services.Configure<AppSettings>(appSettings);
+        }
+
+        
+        public static void SetupRAIDA()
+        {
+            string json = loadDirectory();
+            if (json == "")
+            {
+                updateLog("Directory could not be loaded.Trying to load backup!!");
+                try
+                {
+                    parseDirectoryJSON();
+                }
+                catch (Exception exe)
+                {
+                    updateLog("Directory loading from backup failed.No RAIDA networks found.Quitting!!");
+                    Environment.Exit(1);
+                }
+
+            }
+            else
+            {
+                FS.WriteTextFile("directory.json", json);
+            }
+            parseDirectoryJSON(json);
+            if (networks.Count == 0)
+            {
+                updateLog("No Valid Network found.Quitting!!");
+                System.Environment.Exit(1);
+            }
+            else
+            {
+                updateLog(networks.Count + " Networks found.");
+                raida = (from x in networks
+                         where x.NetworkNumber == NetworkNumber
+                         select x).FirstOrDefault();
+                if(raida == null)
+                {
+                    updateLog("Selected Network Number not found. Quitting.");
+                    Environment.Exit(0);
+                }
+                else
+                {
+                    updateLog("Network Number set to " + NetworkNumber);
+                }
+            }
+            //networks[0]
+        }
         public static void Main(params string[] args)
         {
             Setup();
+            initConfig();
+            updateLog("Loading Network Directory");
+            SetupRAIDA();
+          
             // Program.exe <-g|--greeting|-$ <greeting>> [name <fullname>]
             // [-?|-h|--help] [-u|--uppercase]
             #region CommandLineArguments
@@ -179,31 +262,108 @@ namespace Founders_2._0
             Console.WriteLine(greeting);
         }
 
-      /*  static void Main(string[] args)
+        /*  static void Main(string[] args)
+          {
+
+
+              var app = new CommandLineApplication();
+              app.Name = "ninja";
+              app.HelpOption("-?|-h|--help");
+
+
+              /* Console.Out.WriteLine("Loading File system...");
+              Setup();
+              Console.Out.WriteLine("File system loading Completed.");
+              int argLength = args.Length;
+              if (argLength > 0)
+              {
+                  handleCommand(args);
+              }
+              else
+              {
+                  printWelcome();
+                  run();
+              }
+
+          }
+      */
+        private static int GetNetworkNumber(RAIDADirectory dir)
         {
-           
-
-            var app = new CommandLineApplication();
-            app.Name = "ninja";
-            app.HelpOption("-?|-h|--help");
-
-
-            /* Console.Out.WriteLine("Loading File system...");
-            Setup();
-            Console.Out.WriteLine("File system loading Completed.");
-            int argLength = args.Length;
-            if (argLength > 0)
-            {
-                handleCommand(args);
-            }
-            else
-            {
-                printWelcome();
-                run();
-            }
+            return 1;
 
         }
-    */
+        public static void parseDirectoryJSON()
+        {
+            try
+            {
+                string json = File.ReadAllText(Environment.CurrentDirectory + @"\directory.json");
+
+                //JavaScriptSerializer ser = new JavaScriptSerializer();
+               // var dict = ser.Deserialize<Dictionary<string, object>>(json);
+
+
+                //RAIDADirectory dir = ser.Deserialize<RAIDADirectory>(json);
+
+                RAIDADirectory dir = JsonConvert.DeserializeObject<RAIDADirectory>(json);
+                raida = RAIDA.GetInstance(dir.networks[GetNetworkNumber(dir)]);
+                foreach(var network in dir.networks)
+                {
+                    networks.Add(RAIDA.GetInstance(network));
+
+                }
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
+        }
+
+        public static void parseDirectoryJSON(string json)
+        {
+            RAIDADirectory dir = JsonConvert.DeserializeObject<RAIDADirectory>(json);
+            raida = RAIDA.GetInstance(dir.networks[GetNetworkNumber(dir)]);
+            foreach (var network in dir.networks)
+            {
+                networks.Add(RAIDA.GetInstance(network));
+            }
+        }
+
+        public static void InitiateRAIDA()
+        {
+            string json = loadDirectory();
+            if (json == "")
+            {
+                //MessageBox.Show("Directory could not be loaded.Trying to load backup!!");
+                try
+                {
+                    parseDirectoryJSON();
+                }
+                catch (Exception exe)
+                {
+                    //MessageBox.Show("Directory loading from backup failed.Quitting!!");
+                    Environment.Exit(1);
+
+                }
+
+            }
+            parseDirectoryJSON(json);
+        }
+        public static string loadDirectory()
+        {
+            using (WebClient client = new WebClient())
+            {
+                try
+                {
+                    string s = client.DownloadString(Config.URL_DIRECTORY);
+                    return s;
+                }
+                catch (Exception e)
+                {
+
+                }
+            }
+            return "";
+        }
         public static void printWelcome()
         {
             Console.WriteLine("");

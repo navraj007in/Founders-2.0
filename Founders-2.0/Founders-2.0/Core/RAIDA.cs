@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 using System.Linq;
 using CloudCoinCoreDirectory;
+using System.Net;
 
 namespace CloudCoinCore
 {
@@ -22,6 +23,7 @@ namespace CloudCoinCore
         public IEnumerable<CloudCoin> coins;
         public MultiDetectRequest multiRequest;
         public Network network;
+        public int NetworkNumber=1;
         // Singleton Pattern implemented using private constructor 
         // This allows only one instance of RAIDA per application
 
@@ -36,6 +38,7 @@ namespace CloudCoinCore
         private RAIDA(Network network)
         {
             nodes = new Node[network.raida.Length];
+            this.NetworkNumber = network.nn;
             this.network = network;
             for (int i = 0; i < nodes.Length; i++)
             {
@@ -55,12 +58,9 @@ namespace CloudCoinCore
 
         public static RAIDA GetInstance(Network network)
         {
-            {
-                MainNetwork = new RAIDA(network);
-                return MainNetwork;
-            }
+                return new RAIDA(network);
         }
-
+       
         public List<Func<Task>> GetEchoTasks()
         {
             var echoTasks = new List<Func<Task>>
