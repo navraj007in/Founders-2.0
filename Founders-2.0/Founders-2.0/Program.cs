@@ -38,8 +38,9 @@ namespace Founders_2._0
             Console.WriteLine("5. Fix Fracked Coins");
             Console.WriteLine("6. Show Folders");
             Console.WriteLine("7. Help");
+            Console.WriteLine("8. Switch Network");
 
-            Console.WriteLine("8. Exit");
+            Console.WriteLine("9. Exit");
             var result = Console.ReadLine();
             return Convert.ToInt32(result);
         }
@@ -116,6 +117,26 @@ namespace Founders_2._0
             }
             //networks[0]
         }
+
+        public async static Task SwitchNetwork(int NewNetworkNumber){
+            int oldRAIDANumber = NetworkNumber;
+            RAIDA oldRAIDA = raida;
+            NetworkNumber = NewNetworkNumber;
+            raida = (from x in networks
+                     where x.NetworkNumber == NetworkNumber
+                     select x).FirstOrDefault();
+            if (raida == null)
+            {
+                updateLog("Selected Network Number not found. Reverting to  previous network.");
+                raida = oldRAIDA;
+            }
+            else
+            {
+                updateLog("Network Number set to " + NetworkNumber);
+                await echoRaida();
+            }
+        }
+
         public static void Main(params string[] args)
         {
             Setup();
@@ -182,7 +203,7 @@ namespace Founders_2._0
                 {
                     int input = DisplayMenu();
                     ProcessInput(input).Wait();
-                    if (input == 8)
+                    if (input == 9)
                         break;
                 }
             }
@@ -247,7 +268,9 @@ namespace Founders_2._0
                     //dump();
                     break;
                 case 8:
-                    help();
+                    Console.Write("Enter New Network Number - ");
+                    int nn= Convert.ToInt16( Console.ReadLine());
+                    await SwitchNetwork(nn);
                     break;
                 default:
                     break;
@@ -409,7 +432,7 @@ namespace Founders_2._0
 
         public async static Task echoRaida()
         {
-            Console.Out.WriteLine("Starting Echo to RAIDA\n");
+            Console.Out.WriteLine(String.Format( "Starting Echo to RAIDA Network {0}\n",NetworkNumber));
             Console.Out.WriteLine("----------------------------------\n");
             var echos = raida.GetEchoTasks();
            
