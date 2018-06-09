@@ -122,7 +122,7 @@ namespace Founders_2._0
             initConfig();
             updateLog("Loading Network Directory");
             SetupRAIDA();
-          
+            Console.Clear();
             // Program.exe <-g|--greeting|-$ <greeting>> [name <fullname>]
             // [-?|-h|--help] [-u|--uppercase]
             #region CommandLineArguments
@@ -376,7 +376,9 @@ namespace Founders_2._0
             Console.Out.WriteLine("      This Software is provided as is with all faults, defects    ");
             Console.Out.WriteLine("          and errors, and without warranty of any kind.           ");
             Console.Out.WriteLine("                Free from the CloudCoin Consortium.               ");
+            Console.Out.WriteLine("                            Network Number "+ NetworkNumber +"                      ");
             Console.Out.WriteLine("                                                                  ");
+
             Console.ForegroundColor = ConsoleColor.White;
             Console.BackgroundColor = ConsoleColor.Black;
             //Console.Out.Write("  Checking RAIDA");
