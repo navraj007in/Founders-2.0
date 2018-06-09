@@ -464,6 +464,10 @@ namespace Founders_2._0
             FS.DetectPreProcessing();
 
             var predetectCoins = FS.LoadFolderCoins(FS.PreDetectFolder);
+            predetectCoins = (from x in predetectCoins
+                              where x.nn == NetworkNumber
+                              select x).ToList();
+            
             FileSystem.predetectCoins = predetectCoins;
 
             // Process Coins in Lots of 200. Can be changed from Config File

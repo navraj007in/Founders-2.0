@@ -126,7 +126,7 @@ namespace CloudCoinCore
             {
                 echoResponse.fullResponse = await Utils.GetHtmlFromURL(echoResponse.fullRequest);
                 Debug.WriteLine("Echo From Node - " + NodeNumber + ". " + echoResponse.fullResponse);
-                Debug.WriteLine("Echo URL - "+ FullUrl);
+                //Debug.WriteLine("Echo URL - "+ FullUrl);
                 if (echoResponse.fullResponse.Contains("ready"))
                 {
                     echoResponse.success = true;
