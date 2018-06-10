@@ -3,6 +3,10 @@ using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using Founders;
+using ZXing;
+using ZXing.Common;
+using Pdf417;
+using Newtonsoft.Json;
 
 namespace CloudCoinCore
 {
@@ -32,6 +36,173 @@ namespace CloudCoinCore
         }
 
         /* PUBLIC METHODS */
+
+        public void writeQRCodeFiles(int m1, int m5, int m25, int m100, int m250, String tag)
+        {
+            int totalSaved = m1 + (m5 * 5) + (m25 * 25) + (m100 * 100) + (m250 * 250);// Total value of all coins
+            int coinCount = m1 + m5 + m25 + m100 + m250; // Total number of coins 
+            String[] coinsToDelete = new String[coinCount];
+            String[] bankedFileNames = new DirectoryInfo(this.fileSystem.BankFolder).GetFiles().Select(o => o.Name).ToArray(); // list all file names with bank extension
+            String[] frackedFileNames = new DirectoryInfo(this.fileSystem.FrackedFolder).GetFiles().Select(o => o.Name).ToArray(); // list all file names with bank extension
+            String[] partialFileNames = new DirectoryInfo(this.fileSystem.PartialFolder).GetFiles().Select(o => o.Name).ToArray();
+
+            var list = new List<string>();
+            list.AddRange(bankedFileNames);
+            list.AddRange(frackedFileNames);
+            list.AddRange(partialFileNames);
+
+            bankedFileNames = list.ToArray(); // Add the two arrays together
+
+            String path = this.fileSystem.ExportFolder;//the word path is shorter than other stuff
+
+            // Look at all the money files and choose the ones that are needed.
+            for (int i = 0; i < bankedFileNames.Length; i++)
+            {
+                String bankFileName = (this.fileSystem.BankFolder + bankedFileNames[i]);
+                String frackedFileName = (this.fileSystem.FrackedFolder + bankedFileNames[i]);
+                String partialFileName = (this.fileSystem.PartialFolder + bankedFileNames[i]);
+
+                // Get denominiation
+                String denomination = bankedFileNames[i].Split('.')[0];
+                try
+                {
+                    switch (denomination)
+                    {
+                        case "1":
+                            if (m1 > 0)
+                            {
+                                this.qrCodeWriteOne(path, tag, bankFileName, frackedFileName, partialFileName); m1--;
+                            }
+                            break;
+                        case "5":
+                            if (m5 > 0)
+                            {
+
+                                this.qrCodeWriteOne(path, tag, bankFileName, frackedFileName, partialFileName); m5--;
+                            }
+                            break;
+                        case "25":
+                            if (m25 > 0)
+                            {
+
+                                this.qrCodeWriteOne(path, tag, bankFileName, frackedFileName, partialFileName); m25--;
+                            }
+                            break;
+
+                        case "100":
+                            if (m100 > 0)
+                            {
+                                this.qrCodeWriteOne(path, tag, bankFileName, frackedFileName, partialFileName); m100--;
+                            }
+                            break;
+
+                        case "250":
+                            if (m250 > 0)
+                            { this.qrCodeWriteOne(path, tag, bankFileName, frackedFileName, partialFileName); m250--; }
+                            break;
+                    }//end switch
+
+                    if (m1 == 0 && m5 == 0 && m25 == 0 && m100 == 0 && m250 == 0)// end if file is needed to write jpeg
+                    {
+                        break;// Break if all the coins have been called for.
+                    }
+                }
+                catch (FileNotFoundException ex)
+                {
+                    Console.Out.WriteLine(ex);
+                    //CoreLogger.Log(ex.ToString());
+                }
+                catch (IOException ioex)
+                {
+                    Console.Out.WriteLine(ioex);
+                    //CoreLogger.Log(ioex.ToString());
+                }//end catch 
+            }// for each 1 note  
+        }//end write all jpegs
+
+        public void writeBarCode417CodeFiles(int m1, int m5, int m25, int m100, int m250, String tag)
+        {
+            int totalSaved = m1 + (m5 * 5) + (m25 * 25) + (m100 * 100) + (m250 * 250);// Total value of all coins
+            int coinCount = m1 + m5 + m25 + m100 + m250; // Total number of coins 
+            String[] coinsToDelete = new String[coinCount];
+            String[] bankedFileNames = new DirectoryInfo(this.fileSystem.BankFolder).GetFiles().Select(o => o.Name).ToArray(); // list all file names with bank extension
+            String[] frackedFileNames = new DirectoryInfo(this.fileSystem.FrackedFolder).GetFiles().Select(o => o.Name).ToArray(); // list all file names with bank extension
+            String[] partialFileNames = new DirectoryInfo(this.fileSystem.PartialFolder).GetFiles().Select(o => o.Name).ToArray();
+
+            var list = new List<string>();
+            list.AddRange(bankedFileNames);
+            list.AddRange(frackedFileNames);
+            list.AddRange(partialFileNames);
+
+            bankedFileNames = list.ToArray(); // Add the two arrays together
+
+            String path = this.fileSystem.ExportFolder;//the word path is shorter than other stuff
+
+            // Look at all the money files and choose the ones that are needed.
+            for (int i = 0; i < bankedFileNames.Length; i++)
+            {
+                String bankFileName = (this.fileSystem.BankFolder + bankedFileNames[i]);
+                String frackedFileName = (this.fileSystem.FrackedFolder + bankedFileNames[i]);
+                String partialFileName = (this.fileSystem.PartialFolder + bankedFileNames[i]);
+
+                // Get denominiation
+                String denomination = bankedFileNames[i].Split('.')[0];
+                try
+                {
+                    switch (denomination)
+                    {
+                        case "1":
+                            if (m1 > 0)
+                            {
+                                this.barCode417WriteOne(path, tag, bankFileName, frackedFileName, partialFileName); m1--;
+                            }
+                            break;
+                        case "5":
+                            if (m5 > 0)
+                            {
+
+                                this.barCode417WriteOne(path, tag, bankFileName, frackedFileName, partialFileName); m5--;
+                            }
+                            break;
+                        case "25":
+                            if (m25 > 0)
+                            {
+
+                                this.barCode417WriteOne(path, tag, bankFileName, frackedFileName, partialFileName); m25--;
+                            }
+                            break;
+
+                        case "100":
+                            if (m100 > 0)
+                            {
+                                this.barCode417WriteOne(path, tag, bankFileName, frackedFileName, partialFileName); m100--;
+                            }
+                            break;
+
+                        case "250":
+                            if (m250 > 0)
+                            { this.barCode417WriteOne(path, tag, bankFileName, frackedFileName, partialFileName); m250--; }
+                            break;
+                    }//end switch
+
+                    if (m1 == 0 && m5 == 0 && m25 == 0 && m100 == 0 && m250 == 0)// end if file is needed to write jpeg
+                    {
+                        break;// Break if all the coins have been called for.
+                    }
+                }
+                catch (FileNotFoundException ex)
+                {
+                    Console.Out.WriteLine(ex);
+                    //CoreLogger.Log(ex.ToString());
+                }
+                catch (IOException ioex)
+                {
+                    Console.Out.WriteLine(ioex);
+                    //CoreLogger.Log(ioex.ToString());
+                }//end catch 
+            }// for each 1 note  
+        }//end write all jpegs
+
         public void writeJPEGFiles(int m1, int m5, int m25, int m100, int m250, String tag)
         {
             int totalSaved = m1 + (m5 * 5) + (m25 * 25) + (m100 * 100) + (m250 * 250);// Total value of all coins
@@ -621,6 +792,69 @@ namespace CloudCoinCore
             return jsonExported;
         }//end write json to file
 
+
+        /* PRIVATE METHODS */
+        private void qrCodeWriteOne(String path, String tag, String bankFileName, String frackedFileName, String partialFileName)
+        {
+            if (File.Exists(bankFileName))//If the file is a bank file, export a good bank coin
+            {
+                CloudCoin jpgCoin = this.fileSystem.LoadCoin(bankFileName);
+                if (this.fileSystem.writeQrCode(jpgCoin, tag))//If the jpeg writes successfully 
+                {
+                    //string json = JsonConvert.SerializeObject(jpgCoin);
+                    //var barcode = new Barcode(json, Settings.Default);
+                    //barcode.Canvas.SaveBmp(jpgCoin.FileName+".jpg");
+                    File.Delete(bankFileName);//Delete the files if they have been written to
+                }//end if write was good. 
+            }
+            else if (File.Exists(partialFileName))//If the file is a bank file, export a good bank coin
+            {
+                CloudCoin jpgCoin = this.fileSystem.LoadCoin(partialFileName);
+                if (this.fileSystem.writeQrCode(jpgCoin, tag))//If the jpeg writes successfully 
+                {
+                    File.Delete(partialFileName);//Delete the files if they have been written to
+                }//end if write was good. 
+            }
+            else//Export a fracked coin. 
+            {
+                CloudCoin jpgCoin = fileSystem.LoadCoin(frackedFileName);
+                if (this.fileSystem.writeQrCode(jpgCoin, tag))
+                {
+                    File.Delete(frackedFileName);//Delete the files if they have been written to
+                }//end if
+            }//end else
+        }//End write one jpeg 
+
+        private void barCode417WriteOne(String path, String tag, String bankFileName, String frackedFileName, String partialFileName)
+        {
+            if (File.Exists(bankFileName))//If the file is a bank file, export a good bank coin
+            {
+                CloudCoin jpgCoin = this.fileSystem.LoadCoin(bankFileName);
+                if (this.fileSystem.writeBarCode(jpgCoin, tag))//If the jpeg writes successfully 
+                {
+                    //string json = JsonConvert.SerializeObject(jpgCoin);
+                    //var barcode = new Barcode(json, Settings.Default);
+                    //barcode.Canvas.SaveBmp(jpgCoin.FileName+".jpg");
+                    File.Delete(bankFileName);//Delete the files if they have been written to
+                }//end if write was good. 
+            }
+            else if (File.Exists(partialFileName))//If the file is a bank file, export a good bank coin
+            {
+                CloudCoin jpgCoin = this.fileSystem.LoadCoin(partialFileName);
+                if (this.fileSystem.writeBarCode(jpgCoin, tag))//If the jpeg writes successfully 
+                {
+                    File.Delete(partialFileName);//Delete the files if they have been written to
+                }//end if write was good. 
+            }
+            else//Export a fracked coin. 
+            {
+                CloudCoin jpgCoin = fileSystem.LoadCoin(frackedFileName);
+                if (this.fileSystem.writeBarCode(jpgCoin, tag))
+                {
+                    File.Delete(frackedFileName);//Delete the files if they have been written to
+                }//end if
+            }//end else
+        }//End write one jpeg 
 
 
         /* PRIVATE METHODS */

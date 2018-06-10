@@ -14,6 +14,9 @@ using Newtonsoft.Json;
 using Microsoft.Extensions;
 using Microsoft.Extensions.Configuration;
 using Celebrium;
+using ZXing;
+using QRCoder;
+using System.Drawing;
 
 namespace Founders_2._0
 {
@@ -734,7 +737,7 @@ namespace Founders_2._0
             int[] bankTotals = bank.countCoins(FS.BankFolder);
             int[] frackedTotals = bank.countCoins(FS.FrackedFolder);
             Console.Out.WriteLine("  Your Bank Inventory:");
-            int grandTotal = (bankTotals[0] + frackedTotals[0]);
+            //int grandTotal = (bankTotals[0] + frackedTotals[0]);
             showCoins();
             // state how many 1, 5, 25, 100 and 250
             int exp_1 = 0;
@@ -752,8 +755,8 @@ namespace Founders_2._0
                 Console.ForegroundColor = ConsoleColor.White;
             }//end if they have more than 1000 coins
 
-            Console.Out.WriteLine("  Do you want to export your CloudCoin to (1)jpgs or (2) stack (JSON) file?");
-            int file_type = reader.readInt(1, 2);
+            Console.Out.WriteLine("  Do you want to export your CloudCoin to (1)jpgs , (2) stack (JSON) , (3) QR Code (4) 2D Bar code file?");
+            int file_type = reader.readInt(1, 4);
             // 1 jpg 2 stack
             if (onesTotalCount > 0)
             {
@@ -804,10 +807,21 @@ namespace Founders_2._0
                 exporter.writeJPEGFiles(exp_1, exp_5, exp_25, exp_100, exp_250, tag);
                 // stringToFile( json, "test.txt");
             }
-            else
+            else if(file_type == 2)
             {
                 exporter.writeJSONFile(exp_1, exp_5, exp_25, exp_100, exp_250, tag);
             }
+            else if (file_type == 3)
+            {
+                exporter.writeQRCodeFiles(exp_1, exp_5, exp_25, exp_100, exp_250, tag);
+                // stringToFile( json, "test.txt");
+            }
+            else if (file_type == 4)
+            {
+                exporter.writeBarCode417CodeFiles(exp_1, exp_5, exp_25, exp_100, exp_250, tag);
+                // stringToFile( json, "test.txt");
+            }
+
 
             // end if type jpge or stack
             Console.Out.WriteLine("  Exporting CloudCoins Completed.");
@@ -935,6 +949,15 @@ namespace Founders_2._0
             Console.Out.WriteLine(" Counterfeits:" + FS.CounterfeitFolder);
             Console.Out.WriteLine(" Export:      " + FS.ExportFolder);
             Console.Out.WriteLine(" Lost:        " + FS.LostFolder);
+
+            //QRCodeGenerator qrGenerator = new QRCodeGenerator();
+            //QRCodeData qrCodeData = qrGenerator.CreateQrCode("The text which should be encoded.", QRCodeGenerator.ECCLevel.Q);
+            //QRCode qrCode = new QRCode(qrCodeData);
+            //Bitmap qrCodeImage = qrCode.GetGraphic(20);
+
+            //qrCodeImage.Save("qrcode.jpeg");
+
+
         } // end show folders
 
         public static void Setup()

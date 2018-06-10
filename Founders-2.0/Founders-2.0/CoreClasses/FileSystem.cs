@@ -51,6 +51,10 @@ namespace CloudCoinClient.CoreClasses
             RequestsFolder = RootPath + Path.DirectorySeparatorChar + Config.TAG_REQUESTS + Path.DirectorySeparatorChar;
             DangerousFolder = RootPath + Path.DirectorySeparatorChar + Config.TAG_DANGEROUS + Path.DirectorySeparatorChar;
             LogsFolder = RootPath + Path.DirectorySeparatorChar + Config.TAG_LOGS + Path.DirectorySeparatorChar;
+            QRFolder = ImportFolder + Config.TAG_QR;
+            BarCodeFolder = ImportFolder + Config.TAG_BARCODE;
+            CSVFolder = ImportFolder + Config.TAG_CSV;
+
         }
         public override bool CreateFolderStructure()
         {
@@ -97,6 +101,10 @@ namespace CloudCoinClient.CoreClasses
                 Directory.CreateDirectory(RequestsFolder);
                 Directory.CreateDirectory(DangerousFolder);
                 Directory.CreateDirectory(LogsFolder);
+                Directory.CreateDirectory(QRFolder);
+                Directory.CreateDirectory(BarCodeFolder);
+                Directory.CreateDirectory(CSVFolder);
+
             }
             catch (Exception e)
             {
