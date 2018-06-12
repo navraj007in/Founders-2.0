@@ -33,6 +33,7 @@ namespace Founders_2._0
         public static String[] commandsAvailable = new String[] { "Echo raida", "Show CloudCoins in Bank", "Import / Pown & Deposit", "Export / Withdraw", "Fix Fracked", "Show Folders", "Export stack files with one note each", "Help", "Quit" };
         public static int NetworkNumber = 1;
         public static SimpleLogger logger = new SimpleLogger(FS.LogsFolder + "logs" + DateTime.Now.ToString("yyyyMMdd").ToLower() + ".log", true);
+        static TrustedTradeSocket tts;
 
         #region Total Variables
         public static int onesCount = 0;
@@ -67,8 +68,8 @@ namespace Founders_2._0
             Console.WriteLine("6. Show Folders");
             Console.WriteLine("7. Help");
             Console.WriteLine("8. Switch Network");
-
-            Console.WriteLine("9. Exit");
+            Console.WriteLine("9. Send Coins Over Trusted Trade");
+            Console.WriteLine("10. Exit");
             var result = Console.ReadLine();
             return Convert.ToInt32(result);
         }
@@ -248,7 +249,7 @@ namespace Founders_2._0
                     {
                         int input = DisplayMenu();
                         ProcessInput(input).Wait();
-                        if (input == 9)
+                        if (input == 10)
                             break;
                     }
                     catch(Exception e)
@@ -404,6 +405,9 @@ namespace Founders_2._0
                     Console.Write("Enter New Network Number - ");
                     int nn= Convert.ToInt16( Console.ReadLine());
                     await SwitchNetwork(nn);
+                    break;
+                case 9:
+                    await SendCoinsTT();
                     break;
                 default:
                     break;
@@ -969,10 +973,118 @@ namespace Founders_2._0
             //raida.Echo();
             FS.LoadFileSystem();
 
+            //Connect to Trusted Trade Socket
+            tts = new TrustedTradeSocket("wss://escrow.cloudcoin.digital/ws/", 10, OnWord, OnStatusChange, OnReceive, OnProgress);
+            tts.Connect().Wait();
             //Load Local Coins
 
-          //  Console.Read();
+            //  Console.Read();
         }
 
+
+        static async Task SendCoinsTT()
+        {
+            Console.Out.WriteLine("What is the recipients secred word?");
+            string word = reader.readString();
+            Console.Out.WriteLine("How Many CloudCoins are you Sending?");
+            int amount = reader.readInt();
+            int total = 0;
+            Banker bank = new Banker(FS);
+            int[] bankTotals = bank.countCoins(FS.BankFolder);
+            int[] frackedTotals = bank.countCoins(FS.FrackedFolder);
+            int exp_1 = 0;
+            int exp_5 = 0;
+            int exp_25 = 0;
+            int exp_100 = 0;
+            int exp_250 = 0;
+            if (amount >= 250 && bankTotals[5] + frackedTotals[5] > 0)
+            {
+                exp_250 = ((amount / 250) < (bankTotals[5] + frackedTotals[5])) ? (amount / 250) : (bankTotals[5] + frackedTotals[5]);
+                amount -= (exp_250 * 250);
+                total += (exp_250 * 250);
+            }
+            if (amount >= 100 && bankTotals[4] + frackedTotals[4] > 0)
+            {
+                exp_100 = ((amount / 100) < (bankTotals[4] + frackedTotals[4])) ? (amount / 100) : (bankTotals[4] + frackedTotals[4]);
+                amount -= (exp_100 * 100);
+                total += (exp_100 * 100);
+            }
+            if (amount >= 25 && bankTotals[3] + frackedTotals[3] > 0)
+            {
+                exp_25 = ((amount / 25) < (bankTotals[3] + frackedTotals[3])) ? (amount / 25) : (bankTotals[3] + frackedTotals[3]);
+                amount -= (exp_25 * 25);
+                total += (exp_25 * 25);
+            }
+            if (amount >= 5 && bankTotals[2] + frackedTotals[2] > 0)
+            {
+                exp_5 = ((amount / 5) < (bankTotals[2] + frackedTotals[2])) ? (amount / 5) : (bankTotals[2] + frackedTotals[2]);
+                amount -= (exp_5 * 5);
+                total += (exp_5 * 5);
+            }
+            if (amount >= 1 && bankTotals[1] + frackedTotals[1] > 0)
+            {
+                exp_1 = (amount < (bankTotals[1] + frackedTotals[1])) ? amount : (bankTotals[1] + frackedTotals[1]);
+                amount -= (exp_1);
+                total += (exp_1);
+            }
+            Exporter exporter = new Exporter(FS);
+            exporter.writeJSONFile(exp_1, exp_5, exp_25, exp_100, exp_250, "TrustedTrade");
+            string path = FS.ExportFolder + Path.DirectorySeparatorChar + total + ".CloudCoins.TrustedTrade.stack";
+            Console.Out.WriteLine("Sending " + path);
+            string stack = File.ReadAllText(path);
+            await tts.SendCoins(word, stack);
+        }
+
+        #region TrustedTradeCallbacks
+        static bool OnWord(string word)
+        {
+            tts.secretWord = word;
+            Console.WriteLine("Received Secret Word: " + word);
+            return true;
+        }
+
+        static bool OnStatusChange()
+        {
+            Console.WriteLine("Status Changed: " + tts.GetStatus());
+            if (tts.GetStatus() == "Coins sent")
+            {
+                var filenames = new DirectoryInfo(FS.ExportFolder).GetFiles("*.CloudCoins.TrustedTrade.stack");
+                foreach (var i in filenames)
+                {
+                    File.Delete(i.FullName);
+                }
+                DisplayMenu();
+            }
+            else if (tts.GetStatus() == "Error")
+            {
+                Console.WriteLine(tts.GetError());
+            }
+            return true;
+        }
+
+        static bool OnProgress(string i)
+        {
+            Console.WriteLine("Progress" + i + "%");
+            return true;
+        }
+
+        static bool OnReceive(string hash)
+        {
+            Console.WriteLine("https://escrow.cloudcoin.digital/cc.php?h=" + hash);
+            DownloadCoin(hash);
+            return true;
+        }
+
+        static async void DownloadCoin(string hash)
+        {
+            using (System.Net.Http.HttpClient cli = new System.Net.Http.HttpClient())
+            {
+                var httpResponse = await cli.GetAsync("https://escrow.cloudcoin.digital/cc.php?h=" + hash);
+                var ccstack = await httpResponse.Content.ReadAsStringAsync();
+                File.WriteAllText(FS.ImportFolder + Path.DirectorySeparatorChar + "CloudCoins.FromTrustedTrade.stack", ccstack);
+                await detect();
+            }
+        }
+        #endregion
     }
 }
