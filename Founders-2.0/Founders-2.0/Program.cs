@@ -27,7 +27,7 @@ namespace Founders_2._0
         public static String rootFolder = Directory.GetCurrentDirectory();
         static FileSystem FS = new FileSystem(rootFolder);
         public static RAIDA raida;
-        static List<RAIDA> networks = new List<RAIDA>();
+        //static List<RAIDA> networks = new List<RAIDA>();
         public static String prompt = "> ";
         public static Frack_Fixer fixer;
         public static String[] commandsAvailable = new String[] { "Echo raida", "Show CloudCoins in Bank", "Import / Pown & Deposit", "Export / Withdraw", "Fix Fracked", "Show Folders", "Export stack files with one note each", "Help", "Quit" };
@@ -101,40 +101,30 @@ namespace Founders_2._0
         
         public static void SetupRAIDA()
         {
-            string json = loadDirectory();
-            if (json == "")
+            RAIDA.FileSystem = new FileSystem(rootFolder);
+            try
             {
-                updateLog("Directory could not be loaded.Trying to load backup!!");
-                try
-                {
-                    parseDirectoryJSON();
-                }
-                catch (Exception exe)
-                {
-                    updateLog("Directory loading from backup failed.No RAIDA networks found.Quitting!!");
-                    Environment.Exit(1);
-                }
-
+                RAIDA.Instantiate();
             }
-            else
+            catch(Exception e)
             {
-                FS.WriteTextFile("directory.json", json);
+                Console.WriteLine(e.Message);
+                Environment.Exit(1);
             }
-            parseDirectoryJSON(json);
-            if (networks.Count == 0)
+            if (RAIDA.networks.Count == 0)
             {
                 updateLog("No Valid Network found.Quitting!!");
-                System.Environment.Exit(1);
+                Environment.Exit(1);
             }
             else
             {
-                updateLog(networks.Count + " Networks found.");
-                raida = (from x in networks
+                updateLog(RAIDA.networks.Count + " Networks found.");
+                raida = (from x in RAIDA.networks
                          where x.NetworkNumber == NetworkNumber
                          select x).FirstOrDefault();
                 raida.FS = FS;
                 RAIDA.ActiveRAIDA = raida;
-                if(raida == null)
+                if (raida == null)
                 {
                     updateLog("Selected Network Number not found. Quitting.");
                     Environment.Exit(0);
@@ -151,7 +141,7 @@ namespace Founders_2._0
             int oldRAIDANumber = NetworkNumber;
             RAIDA oldRAIDA = raida;
             NetworkNumber = NewNetworkNumber;
-            raida = (from x in networks
+            raida = (from x in RAIDA.networks
                      where x.NetworkNumber == NetworkNumber
                      select x).FirstOrDefault();
             if (raida == null)
@@ -162,7 +152,7 @@ namespace Founders_2._0
             else
             {
                 updateLog("Network Number set to " + NetworkNumber);
-                await echoRaida();
+                await EchoRaida();
             }
         }
 
@@ -265,7 +255,7 @@ namespace Founders_2._0
                 if (echo.HasValue())
                 {
                     //ech();
-                    await echoRaida();
+                    await EchoRaida();
                 }
                 if(folders.HasValue())
                 {
@@ -371,7 +361,7 @@ namespace Founders_2._0
             switch (input)
             {
                 case 1:
-                    await echoRaida();
+                    await EchoRaida();
                     break;
                 case 2:
                     showCoins();
@@ -418,107 +408,10 @@ namespace Founders_2._0
             Console.WriteLine(greeting);
         }
 
-        /*  static void Main(string[] args)
-          {
-
-
-              var app = new CommandLineApplication();
-              app.Name = "ninja";
-              app.HelpOption("-?|-h|--help");
-
-
-              /* Console.Out.WriteLine("Loading File system...");
-              Setup();
-              Console.Out.WriteLine("File system loading Completed.");
-              int argLength = args.Length;
-              if (argLength > 0)
-              {
-                  handleCommand(args);
-              }
-              else
-              {
-                  printWelcome();
-                  run();
-              }
-
-          }
-      */
         private static int GetNetworkNumber(RAIDADirectory dir)
         {
             return 1;
 
-        }
-        public static void parseDirectoryJSON()
-        {
-            try
-            {
-                string json = File.ReadAllText(Environment.CurrentDirectory + @"\directory.json");
-
-                //JavaScriptSerializer ser = new JavaScriptSerializer();
-               // var dict = ser.Deserialize<Dictionary<string, object>>(json);
-
-
-                //RAIDADirectory dir = ser.Deserialize<RAIDADirectory>(json);
-
-                RAIDADirectory dir = JsonConvert.DeserializeObject<RAIDADirectory>(json);
-                raida = RAIDA.GetInstance(dir.networks[GetNetworkNumber(dir)]);
-                foreach(var network in dir.networks)
-                {
-                    networks.Add(RAIDA.GetInstance(network));
-
-                }
-            }
-            catch (Exception e)
-            {
-                throw e;
-            }
-        }
-
-        public static void parseDirectoryJSON(string json)
-        {
-            RAIDADirectory dir = JsonConvert.DeserializeObject<RAIDADirectory>(json);
-            raida = RAIDA.GetInstance(dir.networks[GetNetworkNumber(dir)]);
-            foreach (var network in dir.networks)
-            {
-                networks.Add(RAIDA.GetInstance(network));
-            }
-        }
-
-        public static void InitiateRAIDA()
-        {
-            string json = loadDirectory();
-            if (json == "")
-            {
-                //MessageBox.Show("Directory could not be loaded.Trying to load backup!!");
-                try
-                {
-                    parseDirectoryJSON();
-                }
-                catch (Exception exe)
-                {
-                    //MessageBox.Show("Directory loading from backup failed.Quitting!!");
-                    Environment.Exit(1);
-
-                }
-
-            }
-            parseDirectoryJSON(json);
-        }
-        public static string loadDirectory()
-        {
-            using (WebClient client = new WebClient())
-            {
-                try
-                {
-                    string s = client.DownloadString(Config.URL_DIRECTORY);
-                    return s;
-                }
-                catch (Exception e)
-                {
-
-                }
-            }
-            return "";
         }
         public static void printWelcome()
         {
@@ -537,21 +430,6 @@ namespace Founders_2._0
 
             Console.ForegroundColor = ConsoleColor.White;
             Console.BackgroundColor = ConsoleColor.Black;
-            //Console.Out.Write("  Checking RAIDA");
-            //await echoRaida();
-            //RAIDA_Status.showMs();
-            //Check to see if suspect files need to be imported because they failed to finish last time. 
-            //String[] suspectFileNames = new DirectoryInfo(suspectFolder).GetFiles().Select(o => o.Name).ToArray();//Get all files in suspect folder
-            //if (suspectFileNames.Length > 0)
-            //{
-            //    Console.ForegroundColor = ConsoleColor.Green;
-            //    Console.Out.WriteLine("  Finishing importing coins from last time...");//
-            //    Console.ForegroundColor = ConsoleColor.White;
-
-            //    //import();//temp stop while testing, change this in production
-            //             //grade();
-
-            //} //end if there are files in the suspect folder that need to be imported
 
         } // End print welcome
         public static void help()
@@ -565,7 +443,7 @@ namespace Founders_2._0
 
         }//End Help
 
-        public async static Task echoRaida()
+        public async static Task EchoRaida()
         {
             Console.Out.WriteLine(String.Format( "Starting Echo to RAIDA Network {0}\n",NetworkNumber));
             Console.Out.WriteLine("----------------------------------\n");
@@ -573,14 +451,13 @@ namespace Founders_2._0
            
 
             await Task.WhenAll(echos.AsParallel().Select(async task => await task()));
-            //MessageBox.Show("Finished Echo");
             Console.Out.WriteLine("Ready Count -" + raida.ReadyCount);
             Console.Out.WriteLine("Not Ready Count -" + raida.NotReadyCount);
 
             for (int i = 0; i < raida.nodes.Count(); i++)
             {
-                // Console.Out.WriteLine("Node " + i + " Status --" + raida.nodes[i].RAIDANodeStatus + "\n");
                 Debug.WriteLine("Node" + i + " Status --" + raida.nodes[i].RAIDANodeStatus);
+                //updateLog("Node" + i + " Status --" + raida.nodes[i].RAIDANodeStatus);
             }
             Console.Out.WriteLine("-----------------------------------\n");
 
@@ -834,7 +711,7 @@ namespace Founders_2._0
             switch (command)
             {
                 case "echo":
-                    await echoRaida();
+                    await EchoRaida();
                     break;
                 case "showcoins":
                     showCoins();
@@ -886,7 +763,7 @@ namespace Founders_2._0
                 switch (commandRecieved)
                 {
                     case 1:
-                         echoRaida();
+                         EchoRaida();
                         break;
                     case 2:
                         //showCoins();

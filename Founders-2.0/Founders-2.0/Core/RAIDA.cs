@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Linq;
 using CloudCoinCoreDirectory;
 using System.Net;
+using Newtonsoft.Json;
 
 namespace CloudCoinCore
 {
@@ -19,17 +20,21 @@ namespace CloudCoinCore
         public static RAIDA MainNetwork;
         public Node[] nodes = new Node[Config.NodeCount];
         public IFileSystem FS;
+        public static IFileSystem FileSystem;
         public CloudCoin coin;
         public IEnumerable<CloudCoin> coins;
         public MultiDetectRequest multiRequest;
         public Network network;
         public int NetworkNumber=1;
+        public static List<RAIDA> networks = new List<RAIDA>();
         public static RAIDA ActiveRAIDA;
+        public static string Workspace;
         // Singleton Pattern implemented using private constructor 
         // This allows only one instance of RAIDA per application
 
         private RAIDA()
         {
+            FS = RAIDA.FileSystem;
             for(int i = 0; i < Config.NodeCount; i++)
             {
                 nodes[i] = new Node(i+1);
@@ -46,6 +51,59 @@ namespace CloudCoinCore
                 nodes[i] = new Node(i + 1,network.raida[i]);
             }
         }
+
+        public static void Instantiate()
+        {
+            string nodesJson = "";
+            networks.Clear();
+            using (WebClient client = new WebClient())
+            {
+                try
+                {
+                    nodesJson = client.DownloadString(Config.URL_DIRECTORY);
+
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                    if(System.IO.File.Exists("directory.json"))
+                    {
+                        nodesJson = System.IO.File.ReadAllText(Environment.CurrentDirectory + @"\directory.json");
+                    }
+                    else
+                    {
+                        Exception raidaException = new Exception("RAIDA instantiation failed. No Directory found on server or local path");
+                        throw raidaException;
+                    }
+                }
+            }
+
+            try
+            {
+                RAIDADirectory dir = JsonConvert.DeserializeObject<RAIDADirectory>(nodesJson);
+
+                foreach (var network in dir.networks)
+                {
+                    networks.Add(RAIDA.GetInstance(network));
+                }
+            }
+            catch(Exception e)
+            {
+                Exception raidaException = new Exception("RAIDA instantiation failed. No Directory found on server or local path");
+                throw raidaException;
+            }
+            if(networks == null )
+            {
+                Exception raidaException = new Exception("RAIDA instantiation failed. No Directory found on server or local path");
+                throw raidaException;
+            }
+            if(networks.Count ==0)
+            {
+                Exception raidaException = new Exception("RAIDA instantiation failed. No Directory found on server or local path");
+                throw raidaException;
+            }
+
+        }
         public static RAIDA GetInstance()
         {
             if (MainNetwork != null)
@@ -59,7 +117,9 @@ namespace CloudCoinCore
 
         public static RAIDA GetInstance(Network network)
         {
-                return new RAIDA(network);
+            RAIDA raida = new RAIDA(network);
+            raida.FS = FileSystem;
+                return raida;
         }
        
         public List<Func<Task>> GetEchoTasks()
