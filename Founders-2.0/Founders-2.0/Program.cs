@@ -1083,6 +1083,7 @@ namespace Founders_2._0
                 var ccstack = await httpResponse.Content.ReadAsStringAsync();
                 File.WriteAllText(FS.ImportFolder + Path.DirectorySeparatorChar + "CloudCoins.FromTrustedTrade.stack", ccstack);
                 await detect();
+                DisplayMenu();
             }
         }
         #endregion
