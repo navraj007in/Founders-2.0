@@ -27,7 +27,7 @@ namespace Founders_2._0
         public static String rootFolder = Directory.GetCurrentDirectory();
         static FileSystem FS = new FileSystem(rootFolder);
         public static RAIDA raida;
-        static List<RAIDA> networks = new List<RAIDA>();
+        //static List<RAIDA> networks = new List<RAIDA>();
         public static String prompt = "> ";
         public static Frack_Fixer fixer;
         public static String[] commandsAvailable = new String[] { "Echo raida", "Show CloudCoins in Bank", "Import / Pown & Deposit", "Export / Withdraw", "Fix Fracked", "Show Folders", "Export stack files with one note each", "Help", "Quit" };
@@ -58,7 +58,7 @@ namespace Founders_2._0
 
         static public int DisplayMenu()
         {
-            Console.WriteLine("Founders Actions                  Secret Word:"+tts.secretWord);
+            Console.WriteLine("Founders Actions                  Secret Word:" + tts.secretWord);
             Console.WriteLine();
             Console.WriteLine("1. Echo RAIDA");
             Console.WriteLine("2. Show CloudCoins");
@@ -102,40 +102,30 @@ namespace Founders_2._0
         
         public static void SetupRAIDA()
         {
-            string json = loadDirectory();
-            if (json == "")
+            RAIDA.FileSystem = new FileSystem(rootFolder);
+            try
             {
-                updateLog("Directory could not be loaded.Trying to load backup!!");
-                try
-                {
-                    parseDirectoryJSON();
-                }
-                catch (Exception exe)
-                {
-                    updateLog("Directory loading from backup failed.No RAIDA networks found.Quitting!!");
-                    Environment.Exit(1);
-                }
-
+                RAIDA.Instantiate();
             }
-            else
+            catch(Exception e)
             {
-                FS.WriteTextFile("directory.json", json);
+                Console.WriteLine(e.Message);
+                Environment.Exit(1);
             }
-            parseDirectoryJSON(json);
-            if (networks.Count == 0)
+            if (RAIDA.networks.Count == 0)
             {
                 updateLog("No Valid Network found.Quitting!!");
-                System.Environment.Exit(1);
+                Environment.Exit(1);
             }
             else
             {
-                updateLog(networks.Count + " Networks found.");
-                raida = (from x in networks
+                updateLog(RAIDA.networks.Count + " Networks found.");
+                raida = (from x in RAIDA.networks
                          where x.NetworkNumber == NetworkNumber
                          select x).FirstOrDefault();
                 raida.FS = FS;
                 RAIDA.ActiveRAIDA = raida;
-                if(raida == null)
+                if (raida == null)
                 {
                     updateLog("Selected Network Number not found. Quitting.");
                     Environment.Exit(0);
@@ -152,7 +142,7 @@ namespace Founders_2._0
             int oldRAIDANumber = NetworkNumber;
             RAIDA oldRAIDA = raida;
             NetworkNumber = NewNetworkNumber;
-            raida = (from x in networks
+            raida = (from x in RAIDA.networks
                      where x.NetworkNumber == NetworkNumber
                      select x).FirstOrDefault();
             if (raida == null)
@@ -163,7 +153,7 @@ namespace Founders_2._0
             else
             {
                 updateLog("Network Number set to " + NetworkNumber);
-                await echoRaida();
+                await EchoRaida();
             }
         }
 
@@ -174,6 +164,7 @@ namespace Founders_2._0
             updateLog("Loading Network Directory");
             SetupRAIDA();
             FS.LoadFileSystem();
+            RAIDA.logger = logger;
             fixer = new Frack_Fixer(FS, Config.milliSecondsToTimeOut);
 
             Console.Clear();
@@ -266,16 +257,16 @@ namespace Founders_2._0
                 if (echo.HasValue())
                 {
                     //ech();
-                    await echoRaida();
+                    await EchoRaida();
                 }
                 if(folders.HasValue())
                 {
-                    showFolders();
+                    ShowFolders();
                 }
 
                 if (pown.HasValue() || detection.HasValue() || import.HasValue())
                 {
-                    await detect();
+                    await RAIDA.ProcessCoins(NetworkNumber);
                 }
                 if (greeting.HasValue())
                 {
@@ -372,13 +363,14 @@ namespace Founders_2._0
             switch (input)
             {
                 case 1:
-                    await echoRaida();
+                    await EchoRaida();
                     break;
                 case 2:
                     showCoins();
                     break;
                 case 3:
-                    await detect();
+                    //await detect();
+                    await RAIDA.ProcessCoins(NetworkNumber);
                     break;
                 case 4:
                     export();
@@ -392,7 +384,7 @@ namespace Founders_2._0
                     {
                         updateLog(e.Message);
                     }
-                    showFolders();
+                    ShowFolders();
                     break;
                 case 5:
                     Fix();
@@ -422,107 +414,10 @@ namespace Founders_2._0
             Console.WriteLine(greeting);
         }
 
-        /*  static void Main(string[] args)
-          {
-
-
-              var app = new CommandLineApplication();
-              app.Name = "ninja";
-              app.HelpOption("-?|-h|--help");
-
-
-              /* Console.Out.WriteLine("Loading File system...");
-              Setup();
-              Console.Out.WriteLine("File system loading Completed.");
-              int argLength = args.Length;
-              if (argLength > 0)
-              {
-                  handleCommand(args);
-              }
-              else
-              {
-                  printWelcome();
-                  run();
-              }
-
-          }
-      */
         private static int GetNetworkNumber(RAIDADirectory dir)
         {
             return 1;
 
-        }
-        public static void parseDirectoryJSON()
-        {
-            try
-            {
-                string json = File.ReadAllText(Environment.CurrentDirectory + @"\directory.json");
-
-                //JavaScriptSerializer ser = new JavaScriptSerializer();
-               // var dict = ser.Deserialize<Dictionary<string, object>>(json);
-
-
-                //RAIDADirectory dir = ser.Deserialize<RAIDADirectory>(json);
-
-                RAIDADirectory dir = JsonConvert.DeserializeObject<RAIDADirectory>(json);
-                raida = RAIDA.GetInstance(dir.networks[GetNetworkNumber(dir)]);
-                foreach(var network in dir.networks)
-                {
-                    networks.Add(RAIDA.GetInstance(network));
-
-                }
-            }
-            catch (Exception e)
-            {
-                throw e;
-            }
-        }
-
-        public static void parseDirectoryJSON(string json)
-        {
-            RAIDADirectory dir = JsonConvert.DeserializeObject<RAIDADirectory>(json);
-            raida = RAIDA.GetInstance(dir.networks[GetNetworkNumber(dir)]);
-            foreach (var network in dir.networks)
-            {
-                networks.Add(RAIDA.GetInstance(network));
-            }
-        }
-
-        public static void InitiateRAIDA()
-        {
-            string json = loadDirectory();
-            if (json == "")
-            {
-                //MessageBox.Show("Directory could not be loaded.Trying to load backup!!");
-                try
-                {
-                    parseDirectoryJSON();
-                }
-                catch (Exception exe)
-                {
-                    //MessageBox.Show("Directory loading from backup failed.Quitting!!");
-                    Environment.Exit(1);
-
-                }
-
-            }
-            parseDirectoryJSON(json);
-        }
-        public static string loadDirectory()
-        {
-            using (WebClient client = new WebClient())
-            {
-                try
-                {
-                    string s = client.DownloadString(Config.URL_DIRECTORY);
-                    return s;
-                }
-                catch (Exception e)
-                {
-
-                }
-            }
-            return "";
         }
         public static void printWelcome()
         {
@@ -541,21 +436,6 @@ namespace Founders_2._0
 
             Console.ForegroundColor = ConsoleColor.White;
             Console.BackgroundColor = ConsoleColor.Black;
-            //Console.Out.Write("  Checking RAIDA");
-            //await echoRaida();
-            //RAIDA_Status.showMs();
-            //Check to see if suspect files need to be imported because they failed to finish last time. 
-            //String[] suspectFileNames = new DirectoryInfo(suspectFolder).GetFiles().Select(o => o.Name).ToArray();//Get all files in suspect folder
-            //if (suspectFileNames.Length > 0)
-            //{
-            //    Console.ForegroundColor = ConsoleColor.Green;
-            //    Console.Out.WriteLine("  Finishing importing coins from last time...");//
-            //    Console.ForegroundColor = ConsoleColor.White;
-
-            //    //import();//temp stop while testing, change this in production
-            //             //grade();
-
-            //} //end if there are files in the suspect folder that need to be imported
 
         } // End print welcome
         public static void help()
@@ -569,7 +449,7 @@ namespace Founders_2._0
 
         }//End Help
 
-        public async static Task echoRaida()
+        public async static Task EchoRaida()
         {
             Console.Out.WriteLine(String.Format( "Starting Echo to RAIDA Network {0}\n",NetworkNumber));
             Console.Out.WriteLine("----------------------------------\n");
@@ -577,154 +457,15 @@ namespace Founders_2._0
            
 
             await Task.WhenAll(echos.AsParallel().Select(async task => await task()));
-            //MessageBox.Show("Finished Echo");
             Console.Out.WriteLine("Ready Count -" + raida.ReadyCount);
             Console.Out.WriteLine("Not Ready Count -" + raida.NotReadyCount);
 
             for (int i = 0; i < raida.nodes.Count(); i++)
             {
-                // Console.Out.WriteLine("Node " + i + " Status --" + raida.nodes[i].RAIDANodeStatus + "\n");
                 Debug.WriteLine("Node" + i + " Status --" + raida.nodes[i].RAIDANodeStatus);
+                //updateLog("Node" + i + " Status --" + raida.nodes[i].RAIDANodeStatus);
             }
             Console.Out.WriteLine("-----------------------------------\n");
-
-        }
-
-        public static async Task detect()
-        {
-            Console.Out.WriteLine(FS.ImportFolder);
-            updateLog("Starting Multi Detect..");
-            TimeSpan ts = new TimeSpan();
-            DateTime before = DateTime.Now;
-            DateTime after;
-            FS.LoadFileSystem();
-
-            // Prepare Coins for Import
-            FS.DetectPreProcessing();
-
-            var predetectCoins = FS.LoadFolderCoins(FS.PreDetectFolder);
-            predetectCoins = (from x in predetectCoins
-                              where x.nn == NetworkNumber
-                              select x).ToList();
-            
-            FileSystem.predetectCoins = predetectCoins;
-
-            // Process Coins in Lots of 200. Can be changed from Config File
-            int LotCount = predetectCoins.Count() / Config.MultiDetectLoad;
-            if (predetectCoins.Count() % Config.MultiDetectLoad > 0) LotCount++;
-            ProgressChangedEventArgs pge = new ProgressChangedEventArgs();
-
-            int CoinCount = 0;
-            int totalCoinCount = predetectCoins.Count();
-            for (int i = 0; i < LotCount; i++)
-            {
-                //Pick up 200 Coins and send them to RAIDA
-                var coins = predetectCoins.Skip(i * Config.MultiDetectLoad).Take(200);
-                raida.coins = coins;
-
-                var tasks = raida.GetMultiDetectTasks(coins.ToArray(), Config.milliSecondsToTimeOut);
-                try
-                {
-                    string requestFileName = Utils.RandomString(16).ToLower() + DateTime.Now.ToString("yyyyMMddHHmmss") + ".stack";
-                    // Write Request To file before detect
-                    FS.WriteCoinsToFile(coins, FS.RequestsFolder + requestFileName);
-                    await Task.WhenAll(tasks.AsParallel().Select(async task => await task()));
-                    int j = 0;
-                    foreach (var coin in coins)
-                    {
-                        coin.pown = "";
-                        for (int k = 0; k < CloudCoinCore.Config.NodeCount; k++)
-                        {
-                            coin.response[k] = raida.nodes[k].MultiResponse.responses[j];
-                            coin.pown += coin.response[k].outcome.Substring(0, 1);
-                        }
-                        int countp = coin.response.Where(x => x.outcome == "pass").Count();
-                        int countf = coin.response.Where(x => x.outcome == "fail").Count();
-                        coin.PassCount = countp;
-                        coin.FailCount = countf;
-                        CoinCount++;
-
-
-                        updateLog("No. " + CoinCount + ". Coin Deteced. S. No. - " + coin.sn + ". Pass Count - " + coin.PassCount + ". Fail Count  - " + coin.FailCount + ". Result - " + coin.DetectionResult + "." + coin.pown);
-                        Debug.WriteLine("Coin Deteced. S. No. - " + coin.sn + ". Pass Count - " + coin.PassCount + ". Fail Count  - " + coin.FailCount + ". Result - " + coin.DetectionResult);
-                        //coin.sortToFolder();
-                        pge.MinorProgress = (CoinCount) * 100 / totalCoinCount;
-                        Debug.WriteLine("Minor Progress- " + pge.MinorProgress);
-                        raida.OnProgressChanged(pge);
-                        j++;
-                    }
-                    pge.MinorProgress = (CoinCount - 1) * 100 / totalCoinCount;
-                    Debug.WriteLine("Minor Progress- " + pge.MinorProgress);
-                    raida.OnProgressChanged(pge);
-                    FS.WriteCoin(coins, FS.DetectedFolder);
-                    FS.RemoveCoins(coins, FS.PreDetectFolder);
-
-
-                    //FS.WriteCoin(coins, FS.DetectedFolder);
-
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine(ex.Message);
-                }
-
-
-            }
-            pge.MinorProgress = 100;
-            Debug.WriteLine("Minor Progress- " + pge.MinorProgress);
-            raida.OnProgressChanged(pge);
-            var detectedCoins = FS.LoadFolderCoins(FS.DetectedFolder);
-            //detectedCoins.ForEach(x => x.pown= "ppppppppppppppppppppppppp");
-
-            // Apply Sort to Folder to all detected coins at once.
-            updateLog("Starting Sort.....");
-            detectedCoins.ForEach(x => x.SortToFolder());
-            updateLog("Ended Sort........");
-
-            var passedCoins = (from x in detectedCoins
-                               where x.folder == FS.BankFolder
-                               select x).ToList();
-
-            var failedCoins = (from x in detectedCoins
-                               where x.folder == FS.CounterfeitFolder
-                               select x).ToList();
-            var lostCoins = (from x in detectedCoins
-                             where x.folder == FS.LostFolder
-                             select x).ToList();
-            var suspectCoins = (from x in detectedCoins
-                                where x.folder == FS.SuspectFolder
-                                select x).ToList();
-
-            Debug.WriteLine("Total Passed Coins - " + passedCoins.Count());
-            Debug.WriteLine("Total Failed Coins - " + failedCoins.Count());
-            updateLog("Coin Detection finished.");
-            updateLog("Total Passed Coins - " + passedCoins.Count() + "");
-            updateLog("Total Failed Coins - " + failedCoins.Count() + "");
-            updateLog("Total Lost Coins - " + lostCoins.Count() + "");
-            updateLog("Total Suspect Coins - " + suspectCoins.Count() + "");
-
-            // Move Coins to their respective folders after sort
-            FS.MoveCoins(passedCoins, FS.DetectedFolder, FS.BankFolder);
-
-            //FS.WriteCoin(failedCoins, FS.CounterfeitFolder, true);
-            FS.MoveCoins(lostCoins, FS.DetectedFolder, FS.LostFolder);
-            FS.MoveCoins(suspectCoins, FS.DetectedFolder, FS.SuspectFolder);
-
-            // Clean up Detected Folder
-            FS.RemoveCoins(failedCoins, FS.DetectedFolder);
-            FS.RemoveCoins(lostCoins, FS.DetectedFolder);
-            FS.RemoveCoins(suspectCoins, FS.DetectedFolder);
-
-            FS.MoveImportedFiles();
-            //FileSystem.detectedCoins = FS.LoadFolderCoins(FS.RootPath + System.IO.Path.DirectorySeparatorChar + FS.DetectedFolder);
-            after = DateTime.Now;
-            ts = after.Subtract(before);
-
-            Debug.WriteLine("Detection Completed in - " + ts.TotalMilliseconds / 1000);
-            updateLog("Detection Completed in - " + ts.TotalMilliseconds / 1000);
-
-            //Console.Read();
-           
 
         }
 
@@ -831,106 +572,7 @@ namespace Founders_2._0
             Console.Out.WriteLine("  Exporting CloudCoins Completed.");
         }// end export One
         /* STATIC METHODS */
-        public async static void handleCommand(string[] args)
-        {
-            string command = args[0];
-
-            switch (command)
-            {
-                case "echo":
-                    await echoRaida();
-                    break;
-                case "showcoins":
-                    showCoins();
-                    break;
-                case "import":
-                    //import();
-                    break;
-                case "export":
-                    //export();
-                    break;
-                case "showfolders":
-                    Process.Start(FS.RootPath);
-                    //showFolders();
-                    break;
-                case "fix":
-                    //fix(timeout);
-                    break;
-                case "dump":
-                    //dump();
-                    break;
-                case "help":
-                    help();
-                    break;
-                default:
-                    break;
-            }
-        }
-        public static void run()
-        {
-            bool restart = false;
-            while (!restart)
-            {
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.Out.WriteLine("");
-                //  Console.Out.WriteLine("========================================");
-                Console.Out.WriteLine("");
-                Console.Out.WriteLine("  Commands Available:");//"Commands Available:";
-                Console.ForegroundColor = ConsoleColor.White;
-                int commandCounter = 1;
-                foreach (String command in commandsAvailable)
-                {
-                    Console.Out.WriteLine("  " + commandCounter + (". " + command));
-                    commandCounter++;
-                }
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.Out.Write(prompt);
-                Console.ForegroundColor = ConsoleColor.White;
-                int commandRecieved = reader.readInt(1, 9);
-                switch (commandRecieved)
-                {
-                    case 1:
-                         echoRaida();
-                        break;
-                    case 2:
-                        //showCoins();
-                        break;
-                    case 3:
-                        detect();
-                        //import();
-                        break;
-                    case 4:
-                        // export();
-                        break;
-                    case 5:
-                        //fix(timeout);
-                        break;
-                    case 6:
-                        showFolders();
-                        break;
-                    case 7:
-                        //dump();
-                        break;
-                    case 8:
-                        Environment.Exit(0);
-                        break;
-                    case 9:
-                        //testMind();
-                        //partialImport();
-                        break;
-                    case 10:
-                        //toMind();
-                        break;
-                    case 11:
-                        //fromMind();
-                        break;
-                    default:
-                        Console.Out.WriteLine("Command failed. Try again.");//"Command failed. Try again.";
-                        break;
-                }// end switch
-            }// end while
-        }// end run method
-
+        
         private static void Fix()
         {
             fixer.continueExecution = true;
@@ -939,7 +581,7 @@ namespace Founders_2._0
             fixer.IsFixing = false;
         }
 
-        public static void showFolders()
+        public static void ShowFolders()
         {
             Console.Out.WriteLine(" Root:        " + rootFolder);
             Console.Out.WriteLine(" Import:      " + FS.ImportFolder);
@@ -980,7 +622,6 @@ namespace Founders_2._0
 
             //  Console.Read();
         }
-
 
         static async Task SendCoinsTT()
         {
@@ -1082,7 +723,7 @@ namespace Founders_2._0
                 var httpResponse = await cli.GetAsync("https://escrow.cloudcoin.digital/cc.php?h=" + hash);
                 var ccstack = await httpResponse.Content.ReadAsStringAsync();
                 File.WriteAllText(FS.ImportFolder + Path.DirectorySeparatorChar + "CloudCoins.FromTrustedTrade.stack", ccstack);
-                await detect();
+                await RAIDA.ProcessCoins(NetworkNumber);
                 DisplayMenu();
             }
         }
