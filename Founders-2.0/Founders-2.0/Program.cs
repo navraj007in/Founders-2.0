@@ -260,7 +260,7 @@ namespace Founders_2._0
                 }
                 if(folders.HasValue())
                 {
-                    showFolders();
+                    ShowFolders();
                 }
 
                 if (pown.HasValue() || detection.HasValue() || import.HasValue())
@@ -383,7 +383,7 @@ namespace Founders_2._0
                     {
                         updateLog(e.Message);
                     }
-                    showFolders();
+                    ShowFolders();
                     break;
                 case 5:
                     Fix();
@@ -577,7 +577,7 @@ namespace Founders_2._0
             fixer.IsFixing = false;
         }
 
-        public static void showFolders()
+        public static void ShowFolders()
         {
             Console.Out.WriteLine(" Root:        " + rootFolder);
             Console.Out.WriteLine(" Import:      " + FS.ImportFolder);
