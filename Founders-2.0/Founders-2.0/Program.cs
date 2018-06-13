@@ -58,7 +58,7 @@ namespace Founders_2._0
 
         static public int DisplayMenu()
         {
-            Console.WriteLine("Founders Actions");
+            Console.WriteLine("Founders Actions                  Secret Word:"+tts.secretWord);
             Console.WriteLine();
             Console.WriteLine("1. Echo RAIDA");
             Console.WriteLine("2. Show CloudCoins");
