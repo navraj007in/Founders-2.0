@@ -129,11 +129,6 @@ namespace CloudCoinClient.CoreClasses
                 int coinExists = (from x in predetectCoins
                                   where x.sn == coin.sn
                                   select x).Count();
-                //if (coinExists > 0)
-                //{
-                //    string suffix = Utils.RandomString(16);
-                //    fileName += suffix.ToLower();
-                //}
                 JsonSerializer serializer = new JsonSerializer();
                 serializer.Converters.Add(new JavaScriptDateTimeConverter());
                 serializer.NullValueHandling = NullValueHandling.Ignore;
