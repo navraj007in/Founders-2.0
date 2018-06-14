@@ -474,11 +474,12 @@ namespace CloudCoinCore
         //int[] nn, int[] sn, String[] an, String[] pan, int[] d, int timeout
         public async Task<MultiDetectResponse> MultiDetect()
         {
+            
             /*PREPARE REQUEST*/
             try
             {
 
-                var raida = RAIDA.ActiveRAIDA;
+                var raida =RAIDA.ActiveRAIDA ;
                 int[] nn = raida.multiRequest.nn;
                 int[] sn = raida.multiRequest.sn;
                 String[] an = raida.multiRequest.an[NodeNumber - 1];

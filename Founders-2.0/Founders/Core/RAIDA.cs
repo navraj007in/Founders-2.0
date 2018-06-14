@@ -8,7 +8,7 @@ using System.Linq;
 using CloudCoinCoreDirectory;
 using System.Net;
 using Newtonsoft.Json;
-using Founders_2;
+using Founders;
 
 namespace CloudCoinCore
 {
@@ -170,10 +170,11 @@ namespace CloudCoinCore
 
             foreach(var nn in networks)
             {
-                updateLog("Starting Coins detection for Network " + nn);
                 ActiveRAIDA = (from x in RAIDA.networks
-                               where x.NetworkNumber == nn
-                               select x).FirstOrDefault();
+                                     where x.NetworkNumber == nn
+                                     select x).FirstOrDefault();
+
+                updateLog("Starting Coins detection for Network " + nn);
                 await ProcessNetworkCoins(nn,ChangeANs);
                 updateLog("Coins detection for Network " + nn + "Finished.");
             }
@@ -185,7 +186,7 @@ namespace CloudCoinCore
         {
             IFileSystem FS = FileSystem;
             FileSystem.LoadFileSystem();
-            //FileSystem.DetectPreProcessing();
+            FileSystem.DetectPreProcessing();
 
             var predetectCoins = FS.LoadFolderCoins(FS.PreDetectFolder);
             predetectCoins = (from x in predetectCoins
