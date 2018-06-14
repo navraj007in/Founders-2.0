@@ -157,12 +157,27 @@ namespace CloudCoinCore
             Console.WriteLine(message);
             logger.Info(message);
         }
-
-        public async static Task ProcessCoins(int NetworkNumber)
+        public async static Task ProcessCoins()
         {
             IFileSystem FS = FileSystem;
             FileSystem.LoadFileSystem();
             FileSystem.DetectPreProcessing();
+
+            var networks = (from x in IFileSystem.importCoins
+                            select x.nn).Distinct().ToList();
+
+            foreach(var nn in networks)
+            {
+                updateLog("Starting Coins detection for Network " + nn);
+                await ProcessNetworkCoins(nn);
+                updateLog("Coins detection for Network " + nn + "Finished.");
+            }
+        }
+        public async static Task ProcessNetworkCoins(int NetworkNumber)
+        {
+            IFileSystem FS = FileSystem;
+            FileSystem.LoadFileSystem();
+            //FileSystem.DetectPreProcessing();
 
             var predetectCoins = FS.LoadFolderCoins(FS.PreDetectFolder);
             predetectCoins = (from x in predetectCoins

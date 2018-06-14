@@ -265,7 +265,7 @@ namespace Founders_2._0
 
                 if (pown.HasValue() || detection.HasValue() || import.HasValue())
                 {
-                    await RAIDA.ProcessCoins(NetworkNumber);
+                    await RAIDA.ProcessNetworkCoins(NetworkNumber);
                 }
                 if (greeting.HasValue())
                 {
@@ -369,7 +369,7 @@ namespace Founders_2._0
                     break;
                 case 3:
                     //await detect();
-                    await RAIDA.ProcessCoins(NetworkNumber);
+                    await RAIDA.ProcessNetworkCoins(NetworkNumber);
                     break;
                 case 4:
                     export();
