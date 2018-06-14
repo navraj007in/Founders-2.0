@@ -266,7 +266,7 @@ namespace Founders_2._0
 
                 if (pown.HasValue() || detection.HasValue() || import.HasValue())
                 {
-                    await RAIDA.ProcessNetworkCoins(NetworkNumber);
+                    await RAIDA.ProcessCoins(false);
                 }
                 if (greeting.HasValue())
                 {
@@ -723,7 +723,7 @@ namespace Founders_2._0
                 var httpResponse = await cli.GetAsync("https://escrow.cloudcoin.digital/cc.php?h=" + hash);
                 var ccstack = await httpResponse.Content.ReadAsStringAsync();
                 File.WriteAllText(FS.ImportFolder + Path.DirectorySeparatorChar + "CloudCoins.FromTrustedTrade.stack", ccstack);
-                await RAIDA.ProcessCoins(NetworkNumber);
+               // await RAIDA.ProcessCoins(NetworkNumber);
                 DisplayMenu();
             }
         }
