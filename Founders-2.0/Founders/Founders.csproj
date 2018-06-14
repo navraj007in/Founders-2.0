@@ -85,6 +85,7 @@
     <Compile Include="Core\CoinUtils.cs" />
     <Compile Include="Core\Config.cs" />
     <Compile Include="Core\DetectEventArgs.cs" />
+    <Compile Include="Core\DetectResponse.cs" />
     <Compile Include="Core\FileSystem.cs" />
     <Compile Include="Core\FixitHelper.cs" />
     <Compile Include="Core\Frack_Fixer.cs" />
