@@ -26,9 +26,8 @@ namespace Founders
         static FileSystem FS = new FileSystem(rootFolder);
         public static RAIDA raida;
         //static List<RAIDA> networks = new List<RAIDA>();
-        public static String prompt = "> ";
+        public static String prompt = "=> ";
         public static Frack_Fixer fixer;
-        public static String[] commandsAvailable = new String[] { "Echo raida", "Show CloudCoins in Bank", "Import / Pown & Deposit", "Export / Withdraw", "Fix Fracked", "Show Folders", "Export stack files with one note each", "Help", "Quit" };
         public static int NetworkNumber = 1;
         public static SimpleLogger logger = new SimpleLogger(FS.LogsFolder + "logs" + DateTime.Now.ToString("yyyyMMdd").ToLower() + ".log", true);
         static TrustedTradeSocket tts;
@@ -65,9 +64,10 @@ namespace Founders
             Console.WriteLine("5. Fix Fracked Coins");
             Console.WriteLine("6. Show Folders");
             Console.WriteLine("7. Help");
-            Console.WriteLine("8. Switch Network");
-            Console.WriteLine("9. Send Coins Over Trusted Trade");
-            Console.WriteLine("10. Exit");
+//            Console.WriteLine("8. Switch Network");
+            Console.WriteLine("8. Send Coins Over Trusted Trade");
+            Console.WriteLine("9. Exit");
+            Console.Write(prompt);
             var result = Console.ReadLine();
             return Convert.ToInt32(result);
         }
@@ -219,7 +219,7 @@ CommandOption echo = commandLineApplication.Option(
                     {
                         int input = DisplayMenu();
                         ProcessInput(input).Wait();
-                        if (input == 10)
+                        if (input == 9)
                             break;
                     }
                     catch (Exception e)
@@ -378,12 +378,12 @@ CommandOption echo = commandLineApplication.Option(
                 case 7:
                     help();
                     break;
+                //case 8:
+                //    Console.Write("Enter New Network Number - ");
+                //    int nn = Convert.ToInt16(Console.ReadLine());
+                //    await SwitchNetwork(nn);
+                //    break;
                 case 8:
-                    Console.Write("Enter New Network Number - ");
-                    int nn = Convert.ToInt16(Console.ReadLine());
-                    await SwitchNetwork(nn);
-                    break;
-                case 9:
                     await SendCoinsTT();
                     break;
                 default:
